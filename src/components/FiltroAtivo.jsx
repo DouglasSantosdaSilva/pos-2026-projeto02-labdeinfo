@@ -1,7 +1,7 @@
 import React from 'react'
 import { ButtonGroup, Button } from 'react-bootstrap'
 
-export function filtro({ valor, onChange }) {
+export function FiltroAtivo({ valor, onChange }) {
   return (
     <ButtonGroup className="mb-3">
       <Button

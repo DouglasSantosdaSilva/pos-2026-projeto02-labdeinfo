@@ -1,7 +1,7 @@
 import React from 'react'
 import { Form, Row, Col } from 'react-bootstrap'
 
-export function selecionar_data({ data, onChange, label = 'Selecionar data' }) {
+export function SeletorData({ data, onChange, label = 'Selecionar data' }) {
   return (
     <Form.Group as={Row} className="align-items-center mb-3">
       {label && (

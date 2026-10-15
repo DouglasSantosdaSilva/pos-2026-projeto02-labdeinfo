@@ -1,6 +1,6 @@
 import React from 'react'
 import { Container } from 'react-bootstrap'
-import { Menu } from './menu'
+import { Menu } from './Menu'
 
 export function Layout({ children, usuario, onLogout }) {
   return (

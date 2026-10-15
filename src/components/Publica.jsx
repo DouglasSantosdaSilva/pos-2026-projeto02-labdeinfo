@@ -1,8 +1,8 @@
 import React from 'react'
 import { Container, Card, Row, Col } from 'react-bootstrap'
-import { Foto } from './foto'
+import { Foto } from './Foto'
 
-export function publico({ children, titulo, subTitulo, logoUrl, nomeOrganizacao = 'Laboratório de Informática' }) {
+export function Publica({ children, titulo, subTitulo, logoUrl, nomeOrganizacao = 'Laboratório de Informática' }) {
   return (
     <div className="bg-light min-vh-100 d-flex flex-column justify-content-center align-items-center py-5">
       <Container>

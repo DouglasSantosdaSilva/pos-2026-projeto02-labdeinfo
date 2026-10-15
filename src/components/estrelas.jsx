@@ -1,6 +1,6 @@
 import React from 'react'
 
-export function estrelas({ nota = 0, onChange }) {
+export function Estrelas({ nota = 0, onChange }) {
   const totalestrelas = 5
 
   const handleClick = (valor) => {

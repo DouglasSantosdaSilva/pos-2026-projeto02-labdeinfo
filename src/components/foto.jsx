@@ -1,6 +1,6 @@
 import React from 'react'
 
-export function foto({ src, alt = 'Imagem', tamanho = 48, arredondado = true, className = '' }) {
+export function Foto({ src, alt = 'Imagem', tamanho = 48, arredondado = true, className = '' }) {
   const estilo = {
     width: `${tamanho}px`,
     height: `${tamanho}px`,
