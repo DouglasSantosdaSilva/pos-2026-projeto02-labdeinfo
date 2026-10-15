@@ -6,7 +6,7 @@ import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 import { Foto } from '../../components/Foto'
 
-export default function tempo_de_uso() {
+export default function EscolherServico() {
   const navigate = useNavigate()
   const { dados, carregando, erro, recarregar } = useApi('/servicos/?ativo=true')
 

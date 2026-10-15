@@ -16,7 +16,7 @@ const DIAS = [
   { id: 6, nome: 'Domingo' },
 ]
 
-export default function horarios() {
+export default function Horarios() {
   const { id } = useParams()
   const { dados: lab } = useApi(`/recursos/${id}/`)
   const { dados: disponibilidades, carregando, erro, recarregar } = useApi(`/disponibilidades/?recurso=${id}`)

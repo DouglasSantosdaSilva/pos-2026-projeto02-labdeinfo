@@ -7,7 +7,7 @@ const MAPA_STATUS = {
   cancelado: { texto: 'Cancelado', classe: 'status-cancelado' },
 }
 
-export default function status_reserva({ status }) {
+export default function StatusReserva({ status }) {
   const info = MAPA_STATUS[status] || { texto: status, classe: '' }
 
   return (

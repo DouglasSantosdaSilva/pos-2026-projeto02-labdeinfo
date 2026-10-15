@@ -1,7 +1,7 @@
 import React from 'react'
 import { Modal, Button } from 'react-bootstrap'
 
-export function confirmar_acao({
+export function ConfirmarAcao({
   show,
   onHide,
   onConfirm,

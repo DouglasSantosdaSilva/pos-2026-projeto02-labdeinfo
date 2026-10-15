@@ -1,10 +1,10 @@
 import React from 'react'
-import ReservaItem from './reservarlab'
+import ReservaItem from './ReservarItem'
 import Carregando from './Carregando'
 import Erro from './Erro'
 import CarregarMais from './CarregarMais'
 
-export default function lista_reservas({ 
+export default function ListaReservas({ 
   reservas, 
   carregando, 
   erro, 

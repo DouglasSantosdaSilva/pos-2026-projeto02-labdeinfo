@@ -6,7 +6,7 @@ import { SeletorData } from '../../components/SeletorData'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 
-export default function escolher_horario() {
+export default function EscolherHorario() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const servicoId = searchParams.get('servico')

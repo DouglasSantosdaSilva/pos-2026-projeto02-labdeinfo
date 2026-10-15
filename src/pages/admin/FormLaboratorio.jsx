@@ -7,7 +7,7 @@ import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 import { Foto } from '../../components/Foto'   
 
-export default function form_laboratorio() {
+export default function FormLaboratorio() {
   const { id } = useParams()
   const isEdicao = Boolean(id)
   const navigate = useNavigate()

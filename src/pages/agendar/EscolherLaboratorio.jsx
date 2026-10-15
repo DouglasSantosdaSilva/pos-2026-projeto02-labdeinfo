@@ -6,7 +6,7 @@ import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 import { Foto } from '../../components/Foto'
 
-export default function escolher_laboratorio() {
+export default function EscolherLaboratorio() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const servicoId = searchParams.get('servico')

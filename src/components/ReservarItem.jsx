@@ -1,7 +1,7 @@
 import React from 'react'
-import StatusReserva from './status_reserva'
+import StatusReserva from './StatusReserva'
 
-export default function reservarlab({ agendamento, onClick }) {
+export default function ReservaItem({ agendamento, onClick }) {
   const { id, servico_nome, recurso_nome, inicio, fim, status } = agendamento
 
   const dataFormatada = new Date(inicio).toLocaleDateString('pt-BR')

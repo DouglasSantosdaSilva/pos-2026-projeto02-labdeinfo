@@ -1,7 +1,7 @@
 import React from 'react'
 import { Spinner } from 'react-bootstrap'
 
-export function carregando({ mensagem = 'Carregando...' }) {
+export function Carregando({ mensagem = 'Carregando...' }) {
   return (
     <div className="d-flex flex-column align-items-center justify-content-center py-5 my-3 text-secondary">
       <Spinner animation="border" role="status" variant="primary" className="mb-2">

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Card, ListGroup, Badge } from 'react-bootstrap'
 
-export function confirmando({ servico, recurso, data, horario, observacoes }) {
+export function Confirmando({ servico, recurso, data, horario, observacoes }) {
   return (
     <Card className="shadow-sm mb-4">
       <Card.Header as="h5" className="bg-primary text-white py-3">

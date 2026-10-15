@@ -6,7 +6,7 @@ import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 import { Foto } from '../../components/Foto'
 
-export default function negocio() {
+export default function Negocio() {
   const { dados, carregando, erro, recarregar } = useApi('/organizacao/')
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')

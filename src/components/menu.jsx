@@ -2,7 +2,7 @@ import React from 'react'
 import { Nav, Navbar, Container, Button } from 'react-bootstrap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 
-export function menu({ usuario, onLogout }) {
+export function Menu({ usuario, onLogout }) {
   const navigate = useNavigate()
   const location = useLocation()
 

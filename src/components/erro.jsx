@@ -1,7 +1,7 @@
 import React from 'react'
 import { Alert, Button } from 'react-bootstrap'
 
-export function erro({ mensagem = 'Não foi possível carregar os dados.', onTentarDeNovo }) {
+export function Erro({ mensagem = 'Não foi possível carregar os dados.', onTentarDeNovo }) {
   return (
     <Alert variant="danger" className="my-4 text-center">
       <Alert.Heading className="fs-6 fw-bold mb-2">Ocorreu um erro</Alert.Heading>

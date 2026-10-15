@@ -7,7 +7,7 @@ import { Confirmacao } from '../../components/Confirmacao'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 
-export default function confirmar() {
+export default function Confirmar() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 

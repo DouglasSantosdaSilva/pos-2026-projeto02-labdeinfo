@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Spinner } from 'react-bootstrap'
 
-export function carregando_mais({ onClick, carregando = false }) {
+export function CarregarMais({ onClick, carregando = false }) {
   return (
     <div className="d-flex justify-content-center my-4">
       <Button

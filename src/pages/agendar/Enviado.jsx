@@ -3,7 +3,7 @@ import { Card, Button, Alert } from 'react-bootstrap'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { status_reserva } from '../../components/status_reserva'
 
-export default function enviado() {
+export default function Enviado() {
   const navigate = useNavigate()
   const location = useLocation()
   const agendamento = location.state?.agendamento

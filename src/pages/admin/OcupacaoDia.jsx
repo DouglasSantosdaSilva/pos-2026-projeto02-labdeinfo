@@ -1,19 +1,19 @@
 import React, { useState } from 'react'
 import { Card, Row, Col, Badge, ListGroup, Form } from 'react-bootstrap'
 import { useApi } from '../../hooks/useApi'
-import { selecionar_data } from '../../components/selecionar_data'
-import { carregando } from '../../components/carregando'
-import { erro } from '../../components/erro'
-import { status_reserva } from '../../components/status_reserva'
+import { SeletorData } from '../../components/SeletorData'
+import { Carregando } from '../../components/Carregando'
+import { Erro } from '../../components/Erro'
+import { StatusReserva } from '../../components/StatusReserva'
 import { useNavigate } from 'react-router-dom'
 
-export default function ocupacao() {
+export default function OcupacaoDia() {
   const navigate = useNavigate()
   const hoje = new Date().toISOString().split('T')[0]
   const [data, setData] = useState(hoje)
   const [labSelecionado, setLabSelecionado] = useState('')
 
-  const { dados: labs, carregando: cLabs, erro: eLabs } = useApi('/recursos/')
+  const { dados: labs, Carregando: cLabs, erro: eLabs } = useApi('/recursos/')
   
   let urlAgendamentos = `/agendamentos/?data_inicio=${data}&data_fim=${data}`
   if (labSelecionado) urlAgendamentos += `&recurso=${labSelecionado}`
@@ -88,7 +88,7 @@ export default function ocupacao() {
                               </strong>
                               <div className="small text-muted">{item.cliente_nome} · {item.servico_nome}</div>
                             </div>
-                            <status_reserva status={item.status} />
+                            <StatusReserva status={item.status} />
                           </ListGroup.Item>
                         ))
                       )}

@@ -1,9 +1,9 @@
 import React from 'react'
 import { ListGroup } from 'react-bootstrap'
-import { Estrelas } from './estrelas'
+import { Estrelas } from './Estrelas'
 import { formatarData } from '../utils/formatos' // Ajuste do caminho do utilitário
 
-export function avaliacoes({ avaliacoes }) {
+export function Avaliacao({ avaliacoes }) {
   return (
     <ListGroup.Item>
       <div className="d-flex justify-content-between align-items-center mb-1">

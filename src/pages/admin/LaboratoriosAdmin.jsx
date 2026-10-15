@@ -7,7 +7,7 @@ import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 import { Foto } from '../../components/Foto'
 
-export default function lab_admin  () {
+export default function LaboratoriosAdmin() {
   const navigate = useNavigate()
   const [filtro, setFiltro] = useState('true')
 
