@@ -12,26 +12,39 @@ export default function Login() {
   const [carregando, setCarregando] = useState(false)
   const [erroMsg, setErroMsg] = useState('')
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setCarregando(true)
-    setErroMsg('')
+ 
+const handleSubmit = async (e) => {
+  e.preventDefault()
+  setCarregando(true)
+  setErroMsg('')
 
-    try {
-      const resposta = await login(email, senha)
-      localStorage.setItem('access', resposta.access)
+  try {
+    const resposta = await login({
+    email,
+    senha,
+    organizacao: 'laboratorio-de-informatica'
+    })
+
+    localStorage.setItem('access', resposta.access)
+
+    if (resposta.refresh) {
       localStorage.setItem('refresh', resposta.refresh)
-      window.location.href = '/'
-    } catch (err) {
-      if (err.status === 400) {
-        setErroMsg('Organização, e-mail ou senha inválidos.')
-      } else {
-        setErroMsg(mensagemDeErro(err))
-      }
-    } finally {
-      setCarregando(false)
     }
+
+    window.location.href = '/'
+  } catch (err) {
+    console.error('Erro no login:', err)
+
+    if (err.status === 400) {
+      setErroMsg(err.message || 'Organização, e-mail ou senha inválidos.')
+    } else {
+      setErroMsg(err.message || mensagemDeErro(err))
+    }
+  } finally {
+    setCarregando(false)
   }
+}
+
 
   return (
     <Publica titulo="Entrar" subTitulo="Acesse sua conta para gerenciar reservas">

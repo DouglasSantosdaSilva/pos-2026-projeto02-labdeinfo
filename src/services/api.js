@@ -28,17 +28,51 @@ export async function api(endpoint, options = {}) {
     body,
   })
 
+  
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    
-    const mensagemDetalhada = typeof errorData === 'object' 
-      ? Object.entries(errorData).map(([chave, val]) => `${chave}: ${Array.isArray(val) ? val.join(', ') : val}`).join(' | ')
-      : null
 
-    throw new Error(mensagemDetalhada || errorData.detail || errorData.message || 'Erro na requisição')
+    const mensagemDetalhada =
+      typeof errorData === 'object' && errorData !== null
+        ? Object.entries(errorData)
+            .map(([chave, valor]) =>
+              `${chave}: ${
+                Array.isArray(valor)
+                  ? valor.join(', ')
+                  : typeof valor === 'object'
+                    ? JSON.stringify(valor)
+                    : valor
+              }`
+            )
+            .join(' | ')
+        : ''
+
+    throw new Error(
+      mensagemDetalhada ||
+      errorData.detail ||
+      errorData.message ||
+      `Erro na requisição (${response.status})`
+    )
   }
 
-  return response.json()
+  if (response.status === 204) {
+    return null
+  }
+
+  const texto = await response.text()
+
+  if (!texto.trim()) {
+    return null
+  }
+
+  try {
+    return JSON.parse(texto)
+  } catch {
+    throw new Error(
+      'A API retornou uma resposta em formato inesperado.'
+    )
+  }
+
 }
 
 export async function cadastrar(dados) {
