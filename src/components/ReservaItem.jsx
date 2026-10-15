@@ -1,23 +1,55 @@
 import React from 'react'
-import StatusReserva from './StatusReserva'
+import { Card, Badge, Button } from 'react-bootstrap'
+import { formatarData } from '../utils/formatos'
 
-export default function ReservaItem({ agendamento, onClick }) {
-  const { id, servico_nome, recurso_nome, inicio, fim, status } = agendamento
+// Garanta o 'export' diretamente na função:
+export function ReservaItem({ reserva, onCancelar }) {
+  if (!reserva) return null
 
-  const dataFormatada = new Date(inicio).toLocaleDateString('pt-BR')
-  const horaInicio = new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  const horaFim = new Date(fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const { id, laboratorio_nome, data, horario, status } = reserva
+
+  const getBadgeVariant = (st) => {
+    switch (st?.toLowerCase()) {
+      case 'confirmada':
+      case 'ativa':
+        return 'success'
+      case 'pendente':
+        return 'warning'
+      case 'cancelada':
+        return 'danger'
+      default:
+        return 'secondary'
+    }
+  }
 
   return (
-    <div className="reserva-lab-card" onClick={() => onClick && onClick(id)}>
-      <div className="reserva-info">
-        <h3>{servico_nome || 'Uso de Laboratório'}</h3>
-        <p className="lab-nome">{recurso_nome || 'Laboratório'}</p>
-        <p className="data-hora">
-          📅 {dataFormatada} das {horaInicio} às {horaFim}
-        </p>
-      </div>
-      <StatusReserva status={status} />
-    </div>
+    <Card className="mb-3 shadow-sm">
+      <Card.Body className="d-flex justify-content-between align-items-center">
+        <div>
+          <Card.Title className="h6 mb-1">
+            {laboratorio_nome || `Reserva #${id}`}
+          </Card.Title>
+          <Card.Text className="text-muted small mb-0">
+            <strong>Data:</strong> {data ? formatarData(data) : 'N/A'} | <strong>Horário:</strong> {horario || 'N/A'}
+          </Card.Text>
+        </div>
+        <div className="d-flex align-items-center gap-2">
+          <Badge bg={getBadgeVariant(status)}>
+            {status || 'Pendente'}
+          </Badge>
+          {onCancelar && status !== 'cancelada' && (
+            <Button 
+              variant="outline-danger" 
+              size="sm" 
+              onClick={() => onCancelar(id)}
+            >
+              Cancelar
+            </Button>
+          )}
+        </div>
+      </Card.Body>
+    </Card>
   )
 }
+
+export default ReservaItem // Mantém a default export como fallback

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
-import { ReservaItem } from '../../components/ReservaItem'
+import ReservaItem from "../../components/ReservaItem"
 import { Foto } from '../../components/Foto'
 
 export default function InicioAluno() {

@@ -1,40 +1,77 @@
-import axios from 'axios'
+const BASE_URL = 'https://agendamentos.spaincentral.cloudapp.azure.com/api'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://agendamentos.spaincentral.cloudapp.azure.com/api'
-const ORGANIZACAO = import.meta.env.VITE_ORGANIZACAO || 'lab-informatica'
-
-export const client = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// Interceptor para adicionar o token JWT em cada requisição
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  if (!config.headers['X-Organizacao']) {
-    config.headers['X-Organizacao'] = ORGANIZACAO
-  }
-  return config
-})
-
-// Função genérica de chamadas
 export async function api(endpoint, options = {}) {
-  const response = await client({
-    url: endpoint,
-    method: options.method || 'GET',
-    data: options.body,
-    params: options.params,
-    headers: options.headers,
+  const token = localStorage.getItem('token')
+  const organizacao = localStorage.getItem('organizacao')
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  if (organizacao && !endpoint.includes('/auth/')) {
+    headers['x-organizacao'] = organizacao
+  }
+
+  let body = options.body
+  if (body && typeof body === 'object' && !(body instanceof FormData)) {
+    body = JSON.stringify(body)
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+    body,
   })
-  return response.data
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    
+    const mensagemDetalhada = typeof errorData === 'object' 
+      ? Object.entries(errorData).map(([chave, val]) => `${chave}: ${Array.isArray(val) ? val.join(', ') : val}`).join(' | ')
+      : null
+
+    throw new Error(mensagemDetalhada || errorData.detail || errorData.message || 'Erro na requisição')
+  }
+
+  return response.json()
 }
 
-// Funções de agendamento usadas no AConfirmar.jsx
+export async function cadastrar(dados) {
+  const payload = {
+    nome: dados.nomeCompleto || dados.nome,
+    email: dados.email,
+    senha: dados.senha,
+    organizacao: dados.organizacao || 'laboratorio-de-informatica',
+  }
+
+  return api('/auth/cadastro/', {
+    method: 'POST',
+    body: payload,
+  })
+}
+export async function login(credenciais) {
+  return api('/auth/login/', { method: 'POST', body: credenciais })
+}
+
+export async function redefinirSenha(email) {
+  return api('/auth/esqueci-senha/', { method: 'POST', body: { email } })
+}
+
+export async function alterarSenha(dados) {
+  return api('/auth/alterar-senha/', { method: 'POST', body: dados })
+}
+
+// Perfil
+export async function atualizarPerfil(dados) {
+  return api('/auth/meu-perfil/', { method: 'PUT', body: dados })
+}
+
+// Agendamentos / Reservas
 export async function confirmarAgendamento(id) {
   return api(`/agendamentos/${id}/confirmar/`, { method: 'POST' })
 }
@@ -46,7 +83,25 @@ export async function cancelarAgendamento(id, motivo = '') {
   })
 }
 
-// Helper para extrair mensagens de erro de requisições Axios
+export async function concluirAgendamento(id) {
+  return api(`/agendamentos/${id}/concluir/`, { method: 'POST' })
+}
+
+export async function avaliarAgendamento(id, dados) {
+  return api(`/agendamentos/${id}/avaliar/`, {
+    method: 'POST',
+    body: dados,
+  })
+}
+
+export async function criarAgendamento(dados) {
+  return api('/agendamentos/', { method: 'POST', body: dados })
+}
+
+export async function criarReserva(dados) {
+  return api('/agendamentos/', { method: 'POST', body: dados })
+}
+
 export function mensagemDeErro(erro, mensagemPadrao = 'Ocorreu um erro ao processar a requisição.') {
   if (erro?.response?.data?.detail) {
     return erro.response.data.detail
@@ -55,4 +110,97 @@ export function mensagemDeErro(erro, mensagemPadrao = 'Ocorreu um erro ao proces
     return erro.response.data.message
   }
   return mensagemPadrao
+}
+
+export async function atualizarOrganizacao(dados) {
+  return api('/organizacao/', {
+    method: 'PUT',
+    body: dados,
+  })
+}
+
+export async function criarLaboratorio(dados) {
+  return api('/laboratorios/', {
+    method: 'POST',
+    body: dados,
+  })
+}
+
+export async function atualizarLaboratorio(id, dados) {
+  return api(`/laboratorios/${id}/`, {
+    method: 'PUT',
+    body: dados,
+  })
+}
+
+export async function deletarLaboratorio(id) {
+  return api(`/laboratorios/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+export async function obterLaboratorio(id) {
+  return api(`/laboratorios/${id}/`, {
+    method: 'GET',
+  })
+}
+
+export async function criarDisponibilidade(dados) {
+  return api('/disponibilidade/', {
+    method: 'POST',
+    body: dados,
+  })
+}
+
+export async function listarDisponibilidade(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return api(`/disponibilidade/${query ? `?${query}` : ''}`, {
+    method: 'GET',
+  })
+}
+
+export async function deletarDisponibilidade(id) {
+  return api(`/disponibilidade/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+export async function excluirDisponibilidade(id) {
+  return api(`/disponibilidade/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+// Gestão de Serviços
+export async function criarServico(dados) {
+  return api('/servicos/', {
+    method: 'POST',
+    body: dados,
+  })
+}
+
+export async function atualizarServico(id, dados) {
+  return api(`/servicos/${id}/`, {
+    method: 'PUT',
+    body: dados,
+  })
+}
+
+export async function deletarServico(id) {
+  return api(`/servicos/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+export async function obterServico(id) {
+  return api(`/servicos/${id}/`, {
+    method: 'GET',
+  })
+}
+
+export async function listarServicos(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return api(`/servicos/${query ? `?${query}` : ''}`, {
+    method: 'GET',
+  })
 }

@@ -1,18 +1,28 @@
 import React from 'react'
+import { Badge } from 'react-bootstrap'
 
-const MAPA_STATUS = {
-  solicitado: { texto: 'Solicitado', classe: 'status-solicitado' },
-  confirmado: { texto: 'Confirmado', classe: 'status-confirmado' },
-  concluido: { texto: 'Concluído', classe: 'status-concluido' },
-  cancelado: { texto: 'Cancelado', classe: 'status-cancelado' },
-}
-
-export default function StatusReserva({ status }) {
-  const info = MAPA_STATUS[status] || { texto: status, classe: '' }
+export function StatusReserva({ status }) {
+  const getVariant = (st) => {
+    switch (st?.toLowerCase()) {
+      case 'confirmada':
+      case 'ativa':
+      case 'aprovada':
+        return 'success'
+      case 'pendente':
+        return 'warning'
+      case 'cancelada':
+      case 'rejeitada':
+        return 'danger'
+      default:
+        return 'secondary'
+    }
+  }
 
   return (
-    <span className={`status-badge ${info.classe}`}>
-      {info.texto}
-    </span>
+    <Badge bg={getVariant(status)}>
+      {status || 'Pendente'}
+    </Badge>
   )
 }
+
+export default StatusReserva
