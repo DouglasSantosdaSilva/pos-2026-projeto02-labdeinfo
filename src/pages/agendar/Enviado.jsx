@@ -1,7 +1,7 @@
 import React from 'react'
 import { Card, Button, Alert } from 'react-bootstrap'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { status_reserva } from '../../components/status_reserva'
+import { status_reserva } from '../../components/StatusReserva'
 
 export default function Enviado() {
   const navigate = useNavigate()

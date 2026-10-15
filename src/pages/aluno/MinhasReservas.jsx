@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Nav } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { usePaginado } from '../hooks/useApi'
+import { usePaginado } from '../../hooks/useApi'
 import { ListaReservas } from '../../components/ListaReservas'
 
 export default function minhas_reservas() {

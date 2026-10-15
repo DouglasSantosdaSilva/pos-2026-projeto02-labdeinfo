@@ -1,12 +1,12 @@
 import React from 'react'
 import { Card, Row, Col, Button } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { useApi } from '../hooks/useApi'
-import { Carregando } from '../components/Carregando'
-import { Erro } from '../components/Erro'
-import { Foto } from '../components/Foto'
+import { useApi } from '../../hooks/useApi'
+import { Carregando } from '../../components/Carregando'
+import { Erro } from '../../components/Erro'
+import { Foto } from '../../components/Foto'
 
-export default function laboratorios() {
+export default function Laboratorios() {
   const navigate = useNavigate()
   const { dados, carregando, erro, recarregar } = useApi('/recursos/?ativo=true')
 

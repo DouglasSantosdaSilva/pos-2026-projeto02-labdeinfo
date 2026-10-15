@@ -1,23 +1,44 @@
 import React from 'react'
 import { ListGroup } from 'react-bootstrap'
 import { Estrelas } from './Estrelas'
-import { formatarData } from '../utils/formatos' // Ajuste do caminho do utilitário
+import { formatarData } from '../utils/formatos'
 
-export function Avaliacao({ avaliacoes }) {
+export function Avaliacao({ avaliacao }) {
+  if (!avaliacao) return null
+
+  const { cliente_nome, nota, comentario, criado_em, servico_nome } = avaliacao
+
   return (
-    <ListGroup.Item>
-      <div className="d-flex justify-content-between align-items-center mb-1">
-        <Estrelas nota={avaliacoes.nota} />
-        {avaliacoes.inicio && (
-          <small className="text-secondary">{formatarData(avaliacoes.inicio)}</small>
-        )}
+    <ListGroup.Item className="py-3 px-3 border-bottom">
+      <div className="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <strong className="d-block text-dark mb-1">
+            {cliente_nome || 'Aluno'}
+          </strong>
+          {servico_nome && (
+            <span className="badge bg-light text-secondary border me-2">
+              {servico_nome}
+            </span>
+          )}
+        </div>
+        <small className="text-muted">
+          {criado_em ? formatarData(criado_em) : ''}
+        </small>
       </div>
-      
-      {avaliacoes.comentario && <p className="my-1">{avaliacoes.comentario}</p>}
-      
-      <small className="text-secondary d-block mt-1">
-        {avaliacoes.cliente_nome} · {avaliacoes.servico_nome} · {avaliacoes.recurso_nome}
-      </small>
+
+      <div className="mb-2">
+        <Estrelas nota={nota} />
+      </div>
+
+      {comentario ? (
+        <p className="mb-0 text-secondary small bg-light p-2 rounded">
+          "{comentario}"
+        </p>
+      ) : (
+        <span className="text-muted small fst-italic">Sem comentário.</span>
+      )}
     </ListGroup.Item>
   )
 }
+
+export default Avaliacao

@@ -3,10 +3,11 @@ import { Form, Button, Alert } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { Publica } from '../../components/Publica'
 import { redefinirSenha, mensagemDeErro } from '../../services/api'
-import { Erro } from '../components/Erro'
+import { Erro } from '../../components/Erro'
 
 export default function EsqueciSenha() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = u
+  seState('')
   const [enviado, setEnviado] = useState(false)
   const [carregando, setCarregando] = useState(false)
   const [erroMsg, setErroMsg] = useState('')

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Form, Button } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { useApi } from '../hooks/useApi'
+import { useApi } from '../../hooks/useApi'
 import { atualizarPerfil, mensagemDeErro } from '../../services/api'
-import { Carregando } from '../components/Carregando'
-import { Erro } from '../components/Erro'
-import { Foto } from '../components/Foto'
+import { Carregando } from '../../components/Carregando'
+import { Erro } from '../../components/Erro'
+import { Foto } from '../../components/Foto'
 
-export default function Perfil({ onLogout }) {
+export default function MeuPerfil({ onLogout }) {
   const navigate = useNavigate()
   const { dados, carregando, erro, recarregar } = useApi('/auth/eu/')
 

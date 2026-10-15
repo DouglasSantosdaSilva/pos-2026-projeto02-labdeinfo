@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { Card, Button, ListGroup, Badge } from 'react-bootstrap'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useApi } from '../hooks/useApi'
+import { useApi } from '../../hooks/useApi'
 import { cancelarAgendamento, confirmarAgendamento, concluirAgendamento, mensagemDeErro } from '../../services/api'
-import { Carregando } from '../components/Carregando'
-import { Erro } from '../components/Erro'
+import { Carregando } from '../../components/Carregando'
+import { Erro } from '../../components/Erro'
 import { StatusReserva } from '../../components/StatusReserva'
-import { Estrelas } from '../components/Estrelas'
+import { Estrelas } from '../../components/Estrelas'
 import { ConfirmarAcao } from '../../components/ConfirmarAcao'
 
 export default function DetalheReserva({ usuario }) {

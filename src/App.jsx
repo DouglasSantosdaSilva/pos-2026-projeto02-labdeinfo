@@ -27,7 +27,6 @@ import EscolherHorario from './pages/agendar/EscolherHorario'
 import Confirmar from './pages/agendar/Confirmar'
 import Enviado from './pages/agendar/Enviado'
 
-// Páginas Admin / Coordenador
 import OcupacaoDia from './pages/admin/OcupacaoDia'
 import AConfirmar from './pages/admin/AConfirmar'
 import Negocio from './pages/admin/Negocio'

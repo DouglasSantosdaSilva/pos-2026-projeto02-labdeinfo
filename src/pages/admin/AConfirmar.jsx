@@ -4,7 +4,7 @@ import { useApi } from '../../hooks/useApi'
 import { confirmarAgendamento, cancelarAgendamento, mensagemDeErro } from '../../services/api'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
-import { confirmar_acao } from '../../components/confirmar_acao'
+import { confirmar_acao } from '../../components/ConfirmarAcao'
 
 export default function AConfirmar() {
   const { dados, carregando, erro, recarregar } = useApi('/agendamentos/?status=solicitado')

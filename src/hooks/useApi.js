@@ -1,104 +1,66 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../services/api'
 
-// Custom Hook para chamadas simples de API
-export function useApi(caminho, buscar = api) {
-  const [resposta, setResposta] = useState({ caminho: null })
-  const [tentativa, setTentativa] = useState(0)
-
-  useEffect(() => {
-    if (!caminho) return
-
-    let ignore = false
-    buscar(caminho)
-      .then((dados) => {
-        if (!ignore) setResposta({ caminho, dados })
-      })
-      .catch((erro) => {
-        if (!ignore) setResposta({ caminho, erro })
-      })
-
-    return () => {
-      ignore = true
-    }
-  }, [caminho, buscar, tentativa])
-
-  function recarregar() {
-    setResposta({ caminho: null })
-    setTentativa((prev) => prev + 1)
-  }
-
-  // Enquanto a resposta for de outro caminho ou nula, indica carregamento
-  const atual = resposta.caminho === caminho
-  return {
-    dados: atual ? resposta.dados : null,
-    erro: atual ? resposta.erro : null,
-    carregando: caminho ? !atual : false,
-    recarregar,
-  }
-}
-
-// Custom Hook para chamadas paginadas da API (listas com count, next, previous, results)
-export function usePaginado(caminho) {
-  const [lista, setLista] = useState({ caminho: null, itens: [], proxima: null })
+// Hook simples para requisições GET
+export function useApi(endpoint, options = {}) {
+  const [dados, setDados] = useState(null)
+  const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
-  const [tentativa, setTentativa] = useState(0)
-  const [carregandoMais, setCarregandoMais] = useState(false)
 
-  useEffect(() => {
-    if (!caminho) return
-
-    let ignore = false
-    api(caminho)
-      .then((dados) => {
-        if (ignore) return
-        setErro(null)
-        setLista({
-          caminho,
-          itens: dados.results || [],
-          proxima: dados.next || null,
-        })
-      })
-      .catch((err) => {
-        if (!ignore) setErro(err)
-      })
-
-    return () => {
-      ignore = true
-    }
-  }, [caminho, tentativa])
-
-  async function carregarMais() {
-    if (!lista.proxima) return
-    setCarregandoMais(true)
-
+  const recarregar = useCallback(async () => {
+    setCarregando(true)
+    setErro(null)
     try {
-      const dados = await api(lista.proxima)
-      setLista((prev) => ({
-        caminho,
-        itens: [...prev.itens, ...(dados.results || [])],
-        proxima: dados.next || null,
-      }))
+      const res = await api(endpoint, options)
+      setDados(res)
     } catch (err) {
       setErro(err)
     } finally {
-      setCarregandoMais(false)
+      setCarregando(false)
+    }
+  }, [endpoint])
+
+  useEffect(() => {
+    if (endpoint) {
+      recarregar()
+    }
+  }, [recarregar])
+
+  return { dados, carregando, erro, recarregar }
+}
+
+// Hook para requisições paginadas (usado em MinhasReservas)
+export function usePaginado(endpoint) {
+  const [dados, setDados] = useState([])
+  const [pagina, setPagina] = useState(1)
+  const [temMais, setTemMais] = useState(false)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
+
+  const carregarPagina = useCallback(async (p = 1) => {
+    setCarregando(true)
+    try {
+      const res = await api(`${endpoint}?page=${p}`)
+      const lista = res.results || res
+      setDados((prev) => (p === 1 ? lista : [...prev, ...lista]))
+      setTemMais(Boolean(res.next))
+      setPagina(p)
+    } catch (err) {
+      setErro(err)
+    } finally {
+      setCarregando(false)
+    }
+  }, [endpoint])
+
+  useEffect(() => {
+    carregarPagina(1)
+  }, [carregarPagina])
+
+  const carregarMais = () => {
+    if (temMais && !carregando) {
+      carregarPagina(pagina + 1)
     }
   }
 
-  function recarregar() {
-    setErro(null)
-    setLista({ caminho: null, itens: [], proxima: null })
-    setTentativa((prev) => prev + 1)
-  }
-
-  const atual = lista.caminho === caminho
-  return {
-    itens: atual ? lista.itens : [],
-    erro,
-    carregando: caminho ? (!atual && !erro) || carregandoMais : false,
-    temMais: atual && lista.proxima !== null,
-    carregarMais,
-    recarregar,
-  }
+  return { dados, carregando, erro, temMais, carregarMais, recarregar: () => carregarPagina(1) }
 }

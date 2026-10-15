@@ -2,12 +2,11 @@ import React, { useState } from 'react'
 import { Form, Button } from 'react-bootstrap'
 import { useNavigate, Link } from 'react-router-dom'
 import { Publica } from '../../components/Publica'
-import { cadastrar, login, mensagemDeErro } from '../../services/api'
-import { Erro } from '../components/Erro'
+import { login, mensagemDeErro } from '../../services/api'
+import { Erro } from '../../components/Erro'
 
-export default function Cadastro() {
+export default function Login() {
   const navigate = useNavigate()
-  const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -19,35 +18,26 @@ export default function Cadastro() {
     setErroMsg('')
 
     try {
-      await cadastrar(nome, email, senha)
-      // Login automático pós-cadastro
-      const tokenRes = await login(email, senha)
-      localStorage.setItem('access', tokenRes.access)
-      localStorage.setItem('refresh', tokenRes.refresh)
+      const resposta = await login(email, senha)
+      localStorage.setItem('access', resposta.access)
+      localStorage.setItem('refresh', resposta.refresh)
       window.location.href = '/'
     } catch (err) {
-      setErroMsg(mensagemDeErro(err))
+      if (err.status === 400) {
+        setErroMsg('Organização, e-mail ou senha inválidos.')
+      } else {
+        setErroMsg(mensagemDeErro(err))
+      }
     } finally {
       setCarregando(false)
     }
   }
 
   return (
-    <Publica titulo="Criar Conta" subTitulo="Preencha seus dados para começar">
+    <Publica titulo="Entrar" subTitulo="Acesse sua conta para gerenciar reservas">
       {erroMsg && <Erro mensagem={erroMsg} />}
 
       <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>Nome Completo</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Seu nome"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            required
-          />
-        </Form.Group>
-
         <Form.Group className="mb-3">
           <Form.Label>E-mail</Form.Label>
           <Form.Control
@@ -59,7 +49,7 @@ export default function Cadastro() {
           />
         </Form.Group>
 
-        <Form.Group className="mb-4">
+        <Form.Group className="mb-2">
           <Form.Label>Senha</Form.Label>
           <Form.Control
             type="password"
@@ -70,12 +60,18 @@ export default function Cadastro() {
           />
         </Form.Group>
 
+        <div className="text-end mb-4">
+          <Link to="/esqueci-senha" className="small text-decoration-none">
+            Esqueci minha senha
+          </Link>
+        </div>
+
         <Button type="submit" variant="primary" className="w-100 py-2 mb-3" disabled={carregando}>
-          {carregando ? 'Criando conta...' : 'Criar conta'}
+          {carregando ? 'Entrando...' : 'Entrar'}
         </Button>
 
         <div className="text-center small">
-          Já tem uma conta? <Link to="/login">Entrar</Link>
+          Não tem uma conta? <Link to="/cadastro">Criar conta</Link>
         </div>
       </Form>
     </Publica>

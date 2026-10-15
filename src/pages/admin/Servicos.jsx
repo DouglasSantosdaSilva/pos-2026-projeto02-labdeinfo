@@ -7,14 +7,14 @@ import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 import { Foto } from '../../components/Foto'
 
-export default function servicos() {
+export default function Servicos() {
   const navigate = useNavigate()
   const [filtro, setFiltro] = useState('true')
 
   const { dados, carregando, erro, recarregar } = useApi(`/servicos/${filtro ? `?ativo=${filtro}` : ''}`)
 
-  if (carregando) return <Carregando mensagem="Carregando serviços..." />
-  if (erro) return <Erro mensagem="Erro ao carregar serviços." onTentarDeNovo={recarregar} />
+  if (Carregando) return <Carregando mensagem="Carregando serviços..." />
+  if (Erro) return <Erro mensagem="Erro ao carregar serviços." onTentarDeNovo={recarregar} />
 
   const lista = dados?.results || dados || []
 
