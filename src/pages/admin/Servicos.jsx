@@ -13,8 +13,10 @@ export default function Servicos() {
 
   const { dados, carregando, erro, recarregar } = useApi(`/servicos/${filtro ? `?ativo=${filtro}` : ''}`)
 
-  if (Carregando) return <Carregando mensagem="Carregando serviços..." />
-  if (Erro) return <Erro mensagem="Erro ao carregar serviços." onTentarDeNovo={recarregar} />
+
+  if (carregando) return <Carregando mensagem="Carregando serviços..." />
+  if (erro) return <Erro mensagem="Erro ao carregar serviços." onTentarDeNovo={recarregar} />
+
 
   const lista = dados?.results || dados || []
 

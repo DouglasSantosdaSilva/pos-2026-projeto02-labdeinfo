@@ -1,7 +1,7 @@
 const BASE_URL = 'https://agendamentos.spaincentral.cloudapp.azure.com/api'
 
 export async function api(endpoint, options = {}) {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('access') || localStorage.getItem('token')
   const organizacao = localStorage.getItem('organizacao')
 
   const headers = {

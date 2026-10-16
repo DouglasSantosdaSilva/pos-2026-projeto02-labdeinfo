@@ -53,8 +53,8 @@ export default function App() {
       {/* Rotas Protegidas (Aluno & Coordenador) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout usuario={usuario} onLogout={logout} />}>
-          <Route path="/" element={<InicioAluno />} />
-          <Route path="/reservas" element={<MinhasReservas />} />
+        <Route path="/" element={<InicioAluno />} />
+          <Route path="/minhas-reservas" element={<MinhasReservas />} />
           <Route path="/reservas/:id" element={<DetalheReserva usuario={usuario} />} />
           <Route path="/reservas/:id/avaliar" element={<Avaliar />} />
           <Route path="/laboratorios" element={<Laboratorios />} />
