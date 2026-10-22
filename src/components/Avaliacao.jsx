@@ -1,7 +1,7 @@
 import React from 'react'
 import { ListGroup } from 'react-bootstrap'
 import { Estrelas } from './Estrelas'
-import { formatarData } from '../utils/formatos'
+import { formatarData } from '../formatos'
 
 export function Avaliacao({ avaliacao }) {
   if (!avaliacao) return null

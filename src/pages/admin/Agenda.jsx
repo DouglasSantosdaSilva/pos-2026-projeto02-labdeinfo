@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { Card, Row, Col, Badge, ListGroup, Form } from 'react-bootstrap'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { SeletorData } from '../../components/SeletorData'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 import { StatusReserva } from '../../components/StatusReserva'
-import { useNavigate } from 'react-router-dom'
 
 export default function OcupacaoDia() {
   const navigate = useNavigate()
@@ -13,20 +13,20 @@ export default function OcupacaoDia() {
   const [data, setData] = useState(hoje)
   const [labSelecionado, setLabSelecionado] = useState('')
 
-  const { dados: labs, Carregando: cLabs, erro: eLabs } = useApi('/recursos/')
+  // Corregido: 'carregando: cLabs' em minúsculas
+  const { dados: labs, carregando: cLabs, erro: eLabs } = useApi('/recursos/')
   
   let urlAgendamentos = `/agendamentos/?data_inicio=${data}&data_fim=${data}`
   if (labSelecionado) urlAgendamentos += `&recurso=${labSelecionado}`
   
   const { dados: resAgendamentos, carregando: cAgend, erro: eAgend, recarregar } = useApi(urlAgendamentos)
 
-  if (cLabs || cAgend) return <carregando mensagem="Buscando ocupação do dia..." />
-  if (eLabs || eAgend) return <erro mensagem="Erro ao carregar dados de ocupação." onTentarDeNovo={recarregar} />
+  if (cLabs || cAgend) return <Carregando mensagem="Buscando ocupação do dia..." />
+  if (eLabs || eAgend) return <Erro mensagem="Erro ao carregar dados de ocupação." onTentarDeNovo={recarregar} />
 
   const laboratorios = labs?.results || labs || []
   const agendamentos = resAgendamentos?.results || resAgendamentos || []
 
-  // Agrupa os agendamentos ativos por laboratório
   const agendamentosAtivos = agendamentos.filter(a => a.status === 'solicitado' || a.status === 'confirmado')
 
   return (
@@ -35,13 +35,13 @@ export default function OcupacaoDia() {
 
       <Row className="mb-4 align-items-center">
         <Col md={4}>
-          <selecionar_data data={data} onChange={setData} label="Data" />
+          <SeletorData data={data} onChange={setData} label="Data" />
         </Col>
         <Col md={4}>
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold text-secondary">Filtrar por Laboratório:</Form.Label>
             <Form.Select value={labSelecionado} onChange={(e) => setLabSelecionado(e.target.value)}>
-              <Option value="">Todos os Laboratórios</Option>
+              <option value="">Todos os Laboratórios</option>
               {laboratorios.map((lab) => (
                 <option key={lab.id} value={lab.id}>{lab.nome}</option>
               ))}

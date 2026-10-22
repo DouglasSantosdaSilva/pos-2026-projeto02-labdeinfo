@@ -4,7 +4,7 @@ import { useApi } from '../../hooks/useApi'
 import { Avaliacao } from '../../components/Avaliacao'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
-import { formatarData } from '../../utils/formatos' // <-- Nota o ../../ aqui
+import { formatarData } from '../../formatos' // <-- Nota o ../../ aqui
 
 export default function Avaliacoes() {
   const { dados: avaliacoes, carregando, erro } = useApi('/avaliacoes/')

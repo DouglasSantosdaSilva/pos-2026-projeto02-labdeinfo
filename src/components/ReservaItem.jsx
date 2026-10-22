@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card, Badge, Button } from 'react-bootstrap'
-import { formatarData } from '../utils/formatos'
+import { formatarData } from '../formatos'
 
 // Garanta o 'export' diretamente na função:
 export function ReservaItem({ reserva, onCancelar }) {
