@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { api } from '../services/api' // <-- Caminho e ficheiro corrigidos aqui
+import { api } from './api/client' // Ou './services/api', conforme o nome no seu projeto
 
-const AuthContext = createContext({})
+// 1. Adicionado 'export' aqui
+export const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
@@ -41,3 +42,6 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext)
 }
+
+// 2. Adicionado 'export default' no final para compatibilidade total
+export default AuthContext

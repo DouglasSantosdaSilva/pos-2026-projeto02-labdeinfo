@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Form, Button } from 'react-bootstrap'
 import { useNavigate, Link } from 'react-router-dom'
-import { Publica } from '../../components/Publica'
-import { login, mensagemDeErro } from '../../services/api'
-import { Erro } from '../../components/Erro'
+import { Publica } from '../components/Publica'
+import { login, mensagemDeErro } from '../services/api'
+import { Erro } from '../components/Erro'
 
 export default function Login() {
   const navigate = useNavigate()

@@ -39,14 +39,19 @@ export function usePaginado(endpoint) {
 
   const carregarPagina = useCallback(async (p = 1) => {
     setCarregando(true)
+    setErro(null)
     try {
-      const res = await api(`${endpoint}?page=${p}`)
+      // Verifica se o endpoint já possui '?' para usar '&' ou '?'
+      const separador = endpoint.includes('?') ? '&' : '?'
+      const res = await api(`${endpoint}${separador}page=${p}`)
+      
       const lista = res.results || res
       setDados((prev) => (p === 1 ? lista : [...prev, ...lista]))
       setTemMais(Boolean(res.next))
       setPagina(p)
     } catch (err) {
-      setErro(err)
+      // Garante uma mensagem amigável em formato de texto para evitar quebrar o React
+      setErro(err.message || err.detail || 'Ocorreu um erro ao buscar os dados.')
     } finally {
       setCarregando(false)
     }

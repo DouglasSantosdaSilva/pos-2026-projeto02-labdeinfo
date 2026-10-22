@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Card, Form, Button } from 'react-bootstrap'
 import { useParams, useNavigate } from 'react-router-dom'
-import { avaliarAgendamento, mensagemDeErro } from '../../services/api'
-import { Estrelas } from '../../components/Estrelas'
-import { Erro } from '../../components/Erro'
+import { avaliarAgendamento, mensagemDeErro } from '../services/api'
+import { Estrelas } from '../components/Estrelas'
+import { Erro } from '../components/Erro'
 
 export default function Avaliar() {
   const { id } = useParams()

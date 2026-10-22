@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Button } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { Publica } from '../../components/Publica'
+import { Publica } from '../components/Publica'
 
 export default function Entrada() {
   const navigate = useNavigate()

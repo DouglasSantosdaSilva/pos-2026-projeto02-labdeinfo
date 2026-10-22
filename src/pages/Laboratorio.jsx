@@ -1,14 +1,14 @@
 import React from 'react'
 import { Card, Button, ListGroup, Row, Col } from 'react-bootstrap'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useApi, usePaginado } from '../../hooks/useApi'
-import { Carregando } from '../../components/Carregando'
-import { Erro } from '../../components/Erro'
-import { Foto } from '../../components/Foto'
-import { Avaliacao } from '../../components/Avaliacao'
-import { CarregarMais } from '../../components/CarregarMais'
+import { useApi, usePaginado } from '../hooks/useApi'
+import { Carregando } from '../components/Carregando'
+import { Erro } from '../components/Erro'
+import { Foto } from '../components/Foto'
+import { Avaliacao } from '../components/Avaliacao'
+import { CarregarMais } from '../components/CarregarMais'
 
-export default function PerfilLaboratorio() {
+export default function Laboratorio() {
   const { id } = useParams()
   const navigate = useNavigate()
 

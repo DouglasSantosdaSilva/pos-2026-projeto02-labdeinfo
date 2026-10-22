@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Form, Button, Alert } from 'react-bootstrap'
-import { cadastrar, login } from '../../services/api'
-import { Publica } from '../../components/Publica'
+import { cadastrar, login } from '../services/api'
+import { Publica } from '../components/Publica'
 
 export default function Cadastro() {
   const [nome, setNome] = useState('')
