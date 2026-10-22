@@ -25,7 +25,9 @@ export default function EscolherHorario() {
     return null
   }
 
-  const horariosPorRecurso = dados || []
+  const horariosPorRecurso = Array.isArray(dados) 
+  ? dados 
+  : (dados?.results || [])
 
   // Regra da Seção 6: O app filtra e mostra apenas os horários de hora cheia (:00)
   const filtrarHoraCheia = (horarios) => {

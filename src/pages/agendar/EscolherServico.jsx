@@ -1,11 +1,12 @@
 import React from 'react'
 import { Card, Row, Col, Button } from 'react-bootstrap'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 
-export default function EscolherServico({ onSelecionar, onSelect, setServico }) {
-  // Chamada à API de serviços
+export default function EscolherServico() {
+  const navigate = useNavigate()
   const { dados, carregando, erro, recarregar } = useApi('/servicos/')
 
   if (carregando) return <Carregando mensagem="Carregando serviços disponíveis..." />
@@ -13,17 +14,9 @@ export default function EscolherServico({ onSelecionar, onSelect, setServico }) 
 
   const servicos = dados?.results || (Array.isArray(dados) ? dados : [])
 
-  const handleClique = (servico) => {
-    console.log('>>> SERVIÇO SELECIONADO:', servico)
-
-    // Aceita qualquer um dos nomes comuns de função passados pelo pai
-    const funcaoSelecao = onSelecionar || onSelect || setServico
-
-    if (funcaoSelecao) {
-      funcaoSelecao(servico)
-    } else {
-      alert(`Serviço "${servico.nome}" selecionado! Porém a função de avanço (onSelecionar) não foi passada pelo componente pai (Agendar.jsx).`)
-    }
+  const handleSelecionar = (servico) => {
+    // Passa o parâmetro 'servico' com o ID exato que o EscolherLaboratorio exige
+    navigate(`/agendar/laboratorio?servico=${servico.id}`)
   }
 
   return (
@@ -50,7 +43,7 @@ export default function EscolherServico({ onSelecionar, onSelect, setServico }) 
                   <Button
                     variant="primary"
                     className="mt-3 w-100 fw-semibold"
-                    onClick={() => handleClique(servico)}
+                    onClick={() => handleSelecionar(servico)}
                   >
                     Selecionar
                   </Button>
