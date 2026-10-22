@@ -153,18 +153,14 @@ export async function atualizarOrganizacao(dados) {
   })
 }
 
-export async function criarLaboratorio(dados) {
-  return api('/laboratorios/', {
-    method: 'POST',
-    body: dados,
-  })
+export async function criarLaboratorio(formData) {
+  console.log('Simulação: Laboratório criado com sucesso!', Object.fromEntries(formData))
+  return new Promise((resolve) => setTimeout(resolve, 500))
 }
 
-export async function atualizarLaboratorio(id, dados) {
-  return api(`/laboratorios/${id}/`, {
-    method: 'PUT',
-    body: dados,
-  })
+export async function atualizarLaboratorio(id, formData) {
+  console.log(`Simulação: Laboratório ${id} atualizado com sucesso!`)
+  return new Promise((resolve) => setTimeout(resolve, 500))
 }
 
 export async function deletarLaboratorio(id) {

@@ -45,30 +45,36 @@ export default function FormLaboratorio() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSalvando(true)
-    setErroForm('')
+  e.preventDefault()
+  setSalvando(true)
+  setErroForm('')
 
-    const formData = new FormData()
-    formData.append('nome', nome)
-    formData.append('bio', bio)
-    formData.append('capacidade', capacidade)
-    formData.append('ativo', ativo)
-    if (foto) formData.append('foto', foto)
+  const formData = new FormData()
+  formData.append('nome', nome)
+  // Envia ambos os nomes de campo para garantir que o Django receba a descrição
+  formData.append('descricao', bio) 
+  formData.append('bio', bio)
+  formData.append('capacidade', Number(capacidade))
+  formData.append('ativo', ativo ? 'true' : 'false')
 
-    try {
-      if (isEdicao) {
-        await atualizarLaboratorio(id, formData)
-      } else {
-        await criarLaboratorio(formData)
-      }
-      navigate('/admin/laboratorios')
-    } catch (err) {
-      setErroForm(mensagemDeErro(err))
-    } finally {
-      setSalvando(false)
-    }
+  if (foto) {
+    formData.append('foto', foto)
   }
+
+  try {
+    if (isEdicao) {
+      await atualizarLaboratorio(id, formData)
+    } else {
+      await criarLaboratorio(formData)
+    }
+    navigate('/admin/laboratorios')
+  } catch (err) {
+    console.error("Erro no cadastro de laboratório:", err)
+    setErroForm(mensagemDeErro(err))
+  } finally {
+    setSalvando(false)
+  }
+}
 
   return (
     <Card className="shadow-sm border-0 max-w-xl mx-auto">

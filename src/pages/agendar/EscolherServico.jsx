@@ -4,17 +4,27 @@ import { useApi } from '../../hooks/useApi'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
 
-export default function EscolherServico({ onSelecionar }) {
+export default function EscolherServico({ onSelecionar, onSelect, setServico }) {
   // Chamada à API de serviços
   const { dados, carregando, erro, recarregar } = useApi('/servicos/')
 
-  console.log('>>> RETORNO DA API SERVICOS:', dados)
-  
   if (carregando) return <Carregando mensagem="Carregando serviços disponíveis..." />
   if (erro) return <Erro mensagem="Erro ao carregar os serviços." onTentarDeNovo={recarregar} />
 
-  // Garante a leitura de 'results' do Django DRF
   const servicos = dados?.results || (Array.isArray(dados) ? dados : [])
+
+  const handleClique = (servico) => {
+    console.log('>>> SERVIÇO SELECIONADO:', servico)
+
+    // Aceita qualquer um dos nomes comuns de função passados pelo pai
+    const funcaoSelecao = onSelecionar || onSelect || setServico
+
+    if (funcaoSelecao) {
+      funcaoSelecao(servico)
+    } else {
+      alert(`Serviço "${servico.nome}" selecionado! Porém a função de avanço (onSelecionar) não foi passada pelo componente pai (Agendar.jsx).`)
+    }
+  }
 
   return (
     <div>
@@ -40,7 +50,7 @@ export default function EscolherServico({ onSelecionar }) {
                   <Button
                     variant="primary"
                     className="mt-3 w-100 fw-semibold"
-                    onClick={() => onSelecionar && onSelecionar(servico)}
+                    onClick={() => handleClique(servico)}
                   >
                     Selecionar
                   </Button>

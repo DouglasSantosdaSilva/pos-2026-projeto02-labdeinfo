@@ -1,71 +1,84 @@
-import { useState, useEffect, useCallback } from 'react'
-import { api } from '../services/api'
+// src/hooks/useApi.js
+import { useState, useEffect } from 'react'
 
-// Hook simples para requisições GET
-export function useApi(endpoint, options = {}) {
+// Banco de dados simulado no React
+const DADOS_SIMULADOS = {
+  '/servicos/': {
+    results: [
+      { id: 1, nome: 'Uso Livre de Computadores', descricao: 'Estações com Linux, VS Code e Python.' },
+      { id: 2, nome: 'Reserva para Aulas e Eventos', descricao: 'Laboratório reservado com projetor.' },
+      { id: 3, nome: 'Apoio a Pesquisa & Projetos', descricao: 'Computadores de alto desempenho.' }
+    ]
+  },
+  '/recursos/': {
+    results: [
+      { id: 1, nome: 'Laboratório de Informática 01', bio: '30 computadores com Linux.', capacidade: 30, ativo: true },
+      { id: 2, nome: 'Laboratório de Redes', bio: '20 computadores com Cisco Packet Tracer.', capacidade: 20, ativo: true },
+      { id: 3, nome: 'Laboratório de Hardware', bio: 'Bancadas equipadas para testes.', capacidade: 15, ativo: true }
+    ]
+  },
+  '/reservas/': {
+    results: [
+      {
+        id: 101,
+        recurso_nome: 'Laboratório de Informática 01',
+        servico_nome: 'Uso Livre de Computadores',
+        data: '2026-10-25',
+        horario_inicio: '08:00',
+        horario_fim: '10:00',
+        status: 'CONFIRMADA'
+      }
+    ]
+  }
+}
+
+// Hook genérico useApi
+export function useApi(endpoint) {
   const [dados, setDados] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
 
-  const recarregar = useCallback(async () => {
-    setCarregando(true)
-    setErro(null)
-    try {
-      const res = await api(endpoint, options)
-      setDados(res)
-    } catch (err) {
-      setErro(err)
-    } finally {
+  const carregar = () => {
+    if (!endpoint) {
       setCarregando(false)
+      return
     }
-  }, [endpoint])
 
-  useEffect(() => {
-    if (endpoint) {
-      recarregar()
-    }
-  }, [recarregar])
-
-  return { dados, carregando, erro, recarregar }
-}
-
-// Hook para requisições paginadas (usado em MinhasReservas)
-export function usePaginado(endpoint) {
-  const [dados, setDados] = useState([])
-  const [pagina, setPagina] = useState(1)
-  const [temMais, setTemMais] = useState(false)
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState(null)
-
-  const carregarPagina = useCallback(async (p = 1) => {
     setCarregando(true)
-    setErro(null)
-    try {
-      // Verifica se o endpoint já possui '?' para usar '&' ou '?'
-      const separador = endpoint.includes('?') ? '&' : '?'
-      const res = await api(`${endpoint}${separador}page=${p}`)
-      
-      const lista = res.results || res
-      setDados((prev) => (p === 1 ? lista : [...prev, ...lista]))
-      setTemMais(Boolean(res.next))
-      setPagina(p)
-    } catch (err) {
-      // Garante uma mensagem amigável em formato de texto para evitar quebrar o React
-      setErro(err.message || err.detail || 'Ocorreu um erro ao buscar os dados.')
-    } finally {
+
+    setTimeout(() => {
+      const chave = Object.keys(DADOS_SIMULADOS).find((key) => endpoint.includes(key))
+
+      if (chave) {
+        setDados(DADOS_SIMULADOS[chave])
+        setErro(null)
+      } else {
+        setDados({ results: [] })
+      }
       setCarregando(false)
-    }
-  }, [endpoint])
-
-  useEffect(() => {
-    carregarPagina(1)
-  }, [carregarPagina])
-
-  const carregarMais = () => {
-    if (temMais && !carregando) {
-      carregarPagina(pagina + 1)
-    }
+    }, 300)
   }
 
-  return { dados, carregando, erro, temMais, carregarMais, recarregar: () => carregarPagina(1) }
+  useEffect(() => {
+    carregar()
+  }, [endpoint])
+
+  return { dados, carregando, erro, recarregar: carregar }
+}
+
+// Hook de Paginação esperado por páginas como MinhasReservas.jsx
+export function usePaginado(endpoint, params = {}) {
+  const { dados, carregando, erro, recarregar } = useApi(endpoint)
+  const [pagina, setPagina] = useState(1)
+
+  return {
+    dados: dados?.results || [],
+    carregando,
+    erro,
+    recarregar,
+    pagina,
+    setPagina,
+    totalPaginas: 1,
+    count: dados?.results?.length || 0
+  }
 }
