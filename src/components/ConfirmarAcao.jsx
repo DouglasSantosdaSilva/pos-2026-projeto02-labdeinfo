@@ -1,32 +1,38 @@
 import React from 'react'
-import { Modal, Button } from 'react-bootstrap'
+import { Confirmacao } from './Confirmacao'
 
-export function ConfirmarAcao({
-  show,
-  onHide,
-  onConfirm,
-  titulo = 'Confirmar Ação',
-  mensagem = 'Tem certeza de que deseja realizar esta ação?',
-  textoBotaoConfirmar = 'Confirmar',
-  variantBotao = 'danger',
-  carregando = false,
-}) {
+const ACOES = {
+  confirmar: {
+    titulo: 'Confirmar reserva',
+    mensagem: 'Deseja confirmar esta reserva?',
+    variante: 'success',
+  },
+  concluir: {
+    titulo: 'Concluir reserva',
+    mensagem: 'Deseja marcar esta reserva como concluída?',
+    variante: 'success',
+  },
+  cancelar: {
+    titulo: 'Cancelar reserva',
+    mensagem: 'Deseja mesmo cancelar esta reserva?',
+    variante: 'danger',
+  },
+}
+
+export function ConfirmarAcao({ acao, onConfirmar, onFechar }) {
+  if (!acao) return null
+
+  const { titulo, mensagem, variante } = ACOES[acao] ?? ACOES.confirmar
+
   return (
-    <Modal show={show} onHide={onHide} centered backdrop="static">
-      <Modal.Header closeButton>
-        <Modal.Title className="fs-5">{titulo}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <p className="mb-0 text-secondary">{mensagem}</p>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide} disabled={carregando}>
-          Cancelar
-        </Button>
-        <Button variant={variantBotao} onClick={onConfirm} disabled={carregando}>
-          {carregando ? 'Aguarde...' : textoBotaoConfirmar}
-        </Button>
-      </Modal.Footer>
-    </Modal>
+    <Confirmacao
+      show={acao !== null}
+      titulo={titulo}
+      mensagem={mensagem}
+      textoConfirmar={titulo}
+      variante={variante}
+      onConfirmar={onConfirmar}
+      onFechar={onFechar}
+    />
   )
 }

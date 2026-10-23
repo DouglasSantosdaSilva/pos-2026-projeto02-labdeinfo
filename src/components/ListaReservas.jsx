@@ -1,23 +1,45 @@
-import React from "react";
-import { ReservaItem } from "./ReservaItem";
-import { Carregando } from "./Carregando";
-import { Erro } from "./Erro";
+import React from 'react'
+import { ListGroup } from 'react-bootstrap'
+import { usePaginado } from '../hooks/useApi'
+import { Carregando } from './Carregando'
+import { CarregarMais } from './CarregarMais'
+import { Erro } from './Erro'
+import { ReservaItem } from './ReservaItem'
 
-export function ListaReservas({ reservas, carregando, erro, onCancelar }) {
-  if (carregando) return <Carregando />;
-  if (erro) return <Erro mensagem={erro} />;
+export function ListaReservas({
+  caminho,
+  vazio = 'Nenhuma reserva encontrada.',
+  mostrarUsuario = false,
+}) {
+  const reservas = usePaginado(caminho)
 
-  if (!reservas || reservas.length === 0) {
-    return <p className="text-muted text-center my-4">Nenhuma reserva encontrada.</p>;
+  if (reservas.erro) {
+    return <Erro erro={reservas.erro} tentarDeNovo={reservas.recarregar} />
   }
 
   return (
-    <div className="lista-reservas">
-      {reservas.map((reserva) => (
-        <ReservaItem key={reserva.id} reserva={reserva} onCancelar={onCancelar} />
-      ))}
-    </div>
-  );
-}
+    <>
+      {!reservas.carregando && reservas.itens.length === 0 && (
+        <p className="text-muted my-3">{vazio}</p>
+      )}
 
-export default ListaReservas;
+      {reservas.itens.length > 0 && (
+        <ListGroup className="shadow-sm border rounded overflow-hidden mb-3">
+          {reservas.itens.map((reserva) => (
+            <ReservaItem
+              key={reserva.id}
+              reserva={reserva}
+              mostrarUsuario={mostrarUsuario}
+            />
+          ))}
+        </ListGroup>
+      )}
+
+      {reservas.carregando ? (
+        <Carregando />
+      ) : (
+        <CarregarMais lista={reservas} />
+      )}
+    </>
+  )
+}

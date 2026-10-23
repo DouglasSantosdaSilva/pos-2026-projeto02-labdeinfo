@@ -1,22 +1,32 @@
 import React from 'react'
-import { Form, Row, Col } from 'react-bootstrap'
+import { Button, Form, InputGroup } from 'react-bootstrap'
+import { somarDias } from '../formatos'
 
-export function SeletorData({ data, onChange, label = 'Selecionar data' }) {
+export function SeletorData({ data, onChange, min }) {
   return (
-    <Form.Group as={Row} className="align-items-center mb-3">
-      {label && (
-        <Form.Label column sm="auto" className="fw-semibold text-secondary">
-          {label}:
-        </Form.Label>
-      )}
-      <Col sm="auto">
-        <Form.Control
-          type="date"
-          value={data}
-          onChange={(e) => onChange(e.target.value)}
-          className="shadow-sm"
-        />
-      </Col>
-    </Form.Group>
+    <InputGroup className="mb-4">
+      <Button
+        variant="outline-secondary"
+        onClick={() => onChange(somarDias(data, -1))}
+        disabled={Boolean(min && data <= min)}
+      >
+        <i className="bi bi-chevron-left"></i>
+      </Button>
+
+      <Form.Control
+        type="date"
+        value={data}
+        min={min}
+        onChange={(e) => onChange(e.target.value)}
+        className="text-center"
+      />
+
+      <Button
+        variant="outline-secondary"
+        onClick={() => onChange(somarDias(data, 1))}
+      >
+        <i className="bi bi-chevron-right"></i>
+      </Button>
+    </InputGroup>
   )
 }

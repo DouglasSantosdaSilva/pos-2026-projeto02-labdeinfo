@@ -1,55 +1,33 @@
 import React from 'react'
-import { Card, Badge, Button } from 'react-bootstrap'
-import { formatarData } from '../formatos'
+import { Link } from 'react-router-dom'
+import { formatarData, formatarHora } from '../formatos'
+import { StatusReserva } from './StatusReserva'
 
-// Garanta o 'export' diretamente na função:
-export function ReservaItem({ reserva, onCancelar }) {
-  if (!reserva) return null
-
-  const { id, laboratorio_nome, data, horario, status } = reserva
-
-  const getBadgeVariant = (st) => {
-    switch (st?.toLowerCase()) {
-      case 'confirmada':
-      case 'ativa':
-        return 'success'
-      case 'pendente':
-        return 'warning'
-      case 'cancelada':
-        return 'danger'
-      default:
-        return 'secondary'
-    }
-  }
-
+export function ReservaItem({ reserva, mostrarUsuario = false }) {
   return (
-    <Card className="mb-3 shadow-sm">
-      <Card.Body className="d-flex justify-content-between align-items-center">
-        <div>
-          <Card.Title className="h6 mb-1">
-            {laboratorio_nome || `Reserva #${id}`}
-          </Card.Title>
-          <Card.Text className="text-muted small mb-0">
-            <strong>Data:</strong> {data ? formatarData(data) : 'N/A'} | <strong>Horário:</strong> {horario || 'N/A'}
-          </Card.Text>
-        </div>
-        <div className="d-flex align-items-center gap-2">
-          <Badge bg={getBadgeVariant(status)}>
-            {status || 'Pendente'}
-          </Badge>
-          {onCancelar && status !== 'cancelada' && (
-            <Button 
-              variant="outline-danger" 
-              size="sm" 
-              onClick={() => onCancelar(id)}
-            >
-              Cancelar
-            </Button>
-          )}
-        </div>
-      </Card.Body>
-    </Card>
+    <Link
+      to={`/reservas/${reserva.id}`}
+      className="d-flex align-items-center gap-3 p-3 text-dark text-decoration-none list-group-item-action"
+    >
+      <div className="text-center" style={{ minWidth: '75px' }}>
+        <div className="fw-bold text-primary">{formatarHora(reserva.inicio)}</div>
+        <small className="text-muted d-block">{formatarData(reserva.inicio)}</small>
+      </div>
+
+      <div className="me-auto">
+        <div className="fw-semibold text-dark">{reserva.servico_nome}</div>
+        <small className="text-muted">
+          {reserva.recurso_nome}
+          {mostrarUsuario && reserva.cliente_nome && ` · ${reserva.cliente_nome}`}
+        </small>
+        {mostrarUsuario && reserva.observacoes && (
+          <div>
+            <small className="fst-italic text-secondary">{reserva.observacoes}</small>
+          </div>
+        )}
+      </div>
+
+      <StatusReserva status={reserva.status} />
+    </Link>
   )
 }
-
-export default ReservaItem // Mantém a default export como fallback

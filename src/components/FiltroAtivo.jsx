@@ -1,30 +1,20 @@
 import React from 'react'
-import { ButtonGroup, Button } from 'react-bootstrap'
+import { Form } from 'react-bootstrap'
 
 export function FiltroAtivo({ valor, onChange }) {
   return (
-    <ButtonGroup className="mb-3">
-      <Button
-        variant={valor === 'true' ? 'primary' : 'outline-primary'}
-        onClick={() => onChange('true')}
-        size="sm"
-      >
-        Ativos
-      </Button>
-      <Button
-        variant={valor === 'false' ? 'primary' : 'outline-primary'}
-        onClick={() => onChange('false')}
-        size="sm"
-      >
-        Inativos
-      </Button>
-      <Button
-        variant={valor === '' ? 'primary' : 'outline-primary'}
-        onClick={() => onChange('')}
-        size="sm"
-      >
-        Todos
-      </Button>
-    </ButtonGroup>
+    <Form.Select
+      size="sm"
+      style={{ width: 'auto' }}
+      value={valor === '' ? 'todos' : String(valor)}
+      onChange={(e) => {
+        const val = e.target.value
+        onChange(val === 'todos' ? '' : val)
+      }}
+    >
+      <option value="todos">Todos</option>
+      <option value="true">Ativos</option>
+      <option value="false">Inativos</option>
+    </Form.Select>
   )
 }

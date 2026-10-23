@@ -1,24 +1,21 @@
 import React from 'react'
 
-export function Foto({ src, alt = 'Imagem', tamanho = 48, arredondado = true, className = '' }) {
-  const estilo = {
-    width: `${tamanho}px`,
-    height: `${tamanho}px`,
-    objectFit: 'cover',
-    borderRadius: arredondado ? '50%' : '8px',
-    backgroundColor: '#e9ecef',
-  }
-
-  if (!src) {
+export function Foto({ src, icone = 'bi-person-circle', tamanho = 48 }) {
+  if (src) {
     return (
-      <div
-        style={estilo}
-        className={`d-inline-flex align-items-center justify-content-center text-secondary fw-bold ${className}`}
-      >
-        {alt ? alt.charAt(0).toUpperCase() : '?'}
-      </div>
+      <img
+        src={src}
+        alt=""
+        className="rounded-circle"
+        style={{ width: tamanho, height: tamanho, objectFit: 'cover' }}
+      />
     )
   }
 
-  return <img src={src} alt={alt} style={estilo} className={className} />
+  return (
+    <i
+      className={`bi ${icone} text-secondary align-middle`}
+      style={{ fontSize: tamanho, lineHeight: 1 }}
+    ></i>
+  )
 }

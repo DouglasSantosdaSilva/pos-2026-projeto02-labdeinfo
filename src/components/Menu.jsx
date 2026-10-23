@@ -1,86 +1,68 @@
-import React, { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap'
+import React from 'react'
+import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
-
-function classeNav({ isActive }) {
-  return `nav-link px-3 py-2 text-sm font-medium transition-colors ${
-    isActive ? 'active fw-bold text-success' : 'text-secondary'
-  }`
-}
+import { Foto } from './Foto'
 
 export function Menu() {
   const { usuario, pode, inicio, sair } = useAuth()
-  const meunome = usuario?.nome || usuario?.email || 'Usuário'
-  const nomeOrganizacao = usuario?.organizacao?.nome || 'Lab Info'
-  const navegar = useNavigate()
-  const [aberto, setAberto] = useState(false)
+  const organizacao = usuario?.organizacao
 
-  // Itens principais dinâmicos baseados na permissão do usuário
-  const itensPrincipais = pode && pode('api.change_organizacao')
+  const itensPrincipais = pode('api.change_organizacao')
     ? [
-        { para: '/admin/agenda', rotulo: 'Agenda Geral' },
+        { para: '/admin/agenda', rotulo: 'Agenda' },
         { para: '/admin/confirmar', rotulo: 'A confirmar' },
         { para: '/admin/avaliacoes', rotulo: 'Avaliações' },
       ]
     : [
         { para: '/inicio', rotulo: 'Início' },
-        ...(pode && pode('api.add_agendamento') ? [{ para: '/agendar', rotulo: 'Agendar' }] : []),
+        ...(pode('api.add_agendamento') ? [{ para: '/agendar', rotulo: 'Reservar' }] : []),
         { para: '/reservas', rotulo: 'Minhas reservas' },
-        { para: '/laboratorios', rotulo: 'Laboratórios' },
+        { para: '/recursos', rotulo: 'Recursos' },
       ]
 
-  // Menu de Cadastros para administradores/coordenadores
   const itensCadastros = [
-    { para: '/admin/negocio', rotulo: 'Configurações do Lab' },
-    { para: '/admin/recursos', rotulo: 'Laboratórios / Sala' },
-    { para: '/admin/servicos', rotulo: 'Softwares / Serviços' },
+    { para: '/admin/negocio', rotulo: 'Dados do Laboratório' },
+    { para: '/admin/recursos', rotulo: 'Recursos' },
+    { para: '/admin/servicos', rotulo: 'Serviços / Softwares' },
   ]
 
-  const handleLogout = () => {
-    setAberto(false)
-    sair()
-    navegar('/login')
-  }
-
   return (
-    <Navbar bg="dark" variant="dark" expand="md" className="shadow-sm py-2">
+    <Navbar bg="light" expand="md" className="border-bottom mb-4 shadow-sm py-2">
       <Container>
-        {/* Logo / Nome da Organização */}
-        <Navbar.Brand as={Link} to={inicio || '/inicio'} className="d-flex align-items-center gap-2 fw-bold">
-          <span className="badge bg-success text-dark fs-6">&lt;/&gt;</span>
-          <span>{nomeOrganizacao}</span>
+        <Navbar.Brand as={Link} to={inicio} className="d-flex align-items-center fw-bold text-primary">
+          <img
+            src="/favicon.png"
+            alt="Logo"
+            width={32}
+            height={32}
+            className="me-2 rounded"
+          />
+          {organizacao?.nome || 'Lab Info'}
         </Navbar.Brand>
 
-        {/* Botão de Toggle para telas pequenas */}
-        <Navbar.Toggle 
-          aria-controls="navbar-labinfo-menu" 
-          onClick={() => setAberto(!aberto)} 
-        />
+        <Navbar.Toggle aria-controls="menu-navegacao" />
 
-        {/* Links de Navegação */}
-        <Navbar.Collapse id="navbar-labinfo-menu" in={aberto}>
-          <Nav className="me-auto ms-md-3 gap-1">
+        <Navbar.Collapse id="menu-navegacao">
+          <Nav className="me-auto my-2 my-md-0">
             {itensPrincipais.map((item) => (
-              <NavLink
+              <Nav.Link
                 key={item.para}
+                as={NavLink}
                 to={item.para}
-                className={classeNav}
-                onClick={() => setAberto(false)}
+                className="px-3"
               >
                 {item.rotulo}
-              </NavLink>
+              </Nav.Link>
             ))}
 
-            {/* Menu Dropdown de Cadastros (Administração) */}
-            {pode && pode('api.change_organizacao') && (
-              <NavDropdown title="Cadastros" id="dropdown-cadastros-admin">
+            {pode('api.change_organizacao') && (
+              <NavDropdown title="Cadastros" id="dropdown-cadastros" className="px-2">
                 {itensCadastros.map((item) => (
                   <NavDropdown.Item
                     key={item.para}
                     as={Link}
                     to={item.para}
-                    onClick={() => setAberto(false)}
                   >
                     {item.rotulo}
                   </NavDropdown.Item>
@@ -89,19 +71,23 @@ export function Menu() {
             )}
           </Nav>
 
-          {/* Área do Perfil do Usuário */}
-          <Nav className="align-items-md-center gap-2 mt-3 mt-md-0">
+          <Nav className="ms-auto align-items-md-center">
             <NavDropdown
-              title={`👤 ${meunome}`}
-              id="dropdown-usuario-perfil"
+              title={
+                <span className="d-inline-flex align-items-center gap-2 fw-semibold text-dark">
+                  <Foto src={usuario?.foto} tamanho={28} />
+                  <span>{usuario?.nome}</span>
+                </span>
+              }
+              id="dropdown-usuario"
               align="end"
             >
-              <NavDropdown.Item as={Link} to="/perfil" onClick={() => setAberto(false)}>
-                <i className="bi bi-person me-2"></i> Meu perfil
+              <NavDropdown.Item as={Link} to="/perfil">
+                <i className="bi bi-person me-2"></i>Meu perfil
               </NavDropdown.Item>
               <NavDropdown.Divider />
-              <NavDropdown.Item onClick={handleLogout} className="text-danger">
-                <i className="bi bi-box-arrow-right me-2"></i> Sair
+              <NavDropdown.Item onClick={sair} className="text-danger">
+                <i className="bi bi-box-arrow-right me-2"></i>Sair
               </NavDropdown.Item>
             </NavDropdown>
           </Nav>

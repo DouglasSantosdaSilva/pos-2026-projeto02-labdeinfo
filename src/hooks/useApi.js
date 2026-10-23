@@ -1,92 +1,90 @@
-// src/hooks/useApi.js
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { api } from '../api/client'
 
-const SERVICOS_MOCK = [
-  { id: 1, nome: 'Uso Livre de Computadores', descricao: 'Estações com Linux, VS Code e Python.' },
-  { id: 2, nome: 'Reserva para Aulas e Eventos', descricao: 'Laboratório reservado com projetor.' },
-  { id: 3, nome: 'Apoio a Pesquisa & Projetos', descricao: 'Computadores de alto desempenho.' }
-]
-
-const RECURSOS_MOCK = [
-  { id: 1, nome: 'Laboratório de Informática 01', bio: '30 computadores com Linux.', capacidade: 30, ativo: true },
-  { id: 2, nome: 'Laboratório de Redes', bio: '20 computadores com Cisco Packet Tracer.', capacidade: 20, ativo: true },
-  { id: 3, nome: 'Laboratório de Hardware', bio: 'Bancadas equipadas para testes.', capacidade: 15, ativo: true }
-]
-
-const HORARIOS_PADRAO = [
-  { id: 1, hora: '08:00', inicio: '08:00', fim: '09:00', livre: true, disponivel: true },
-  { id: 2, hora: '09:00', inicio: '09:00', fim: '10:00', livre: true, disponivel: true },
-  { id: 3, hora: '10:00', inicio: '10:00', fim: '11:00', livre: true, disponivel: true }
-]
-
-export function useApi(endpoint) {
-  const [dados, setDados] = useState(null)
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState(null)
-
-  const carregar = () => {
-    if (!endpoint) {
-      setCarregando(false)
-      return
-    }
-
-    setCarregando(true)
-
-    setTimeout(() => {
-      try {
-        if (endpoint.includes('/servicos/')) {
-          const match = endpoint.match(/\/servicos\/(\d+)/)
-          if (match) {
-            const item = SERVICOS_MOCK.find(s => s.id === Number(match[1])) || SERVICOS_MOCK[0]
-            setDados(item)
-          } else {
-            setDados({ results: SERVICOS_MOCK })
-          }
-          setErro(null)
-        } else if (endpoint.includes('/recursos/')) {
-          const match = endpoint.match(/\/recursos\/(\d+)/)
-          if (match) {
-            const item = RECURSOS_MOCK.find(r => r.id === Number(match[1])) || RECURSOS_MOCK[0]
-            setDados(item)
-          } else {
-            setDados({ results: RECURSOS_MOCK })
-          }
-          setErro(null)
-        } else if (endpoint.includes('horario') || endpoint.includes('disponib')) {
-          setDados({ results: RECURSOS_MOCK, laboratorios: RECURSOS_MOCK })
-          setErro(null)
-        } else {
-          setDados({ results: [] })
-          setErro(null)
-        }
-      } catch (e) {
-        setErro(null)
-        setDados({})
-      } finally {
-        setCarregando(false)
-      }
-    }, 300)
-  }
+// Custom hook para requisições simples à API
+export function useApi(caminho, buscar = api) {
+  const [resposta, setResposta] = useState({ caminho: null })
+  const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
-    carregar()
-  }, [endpoint])
+    let ignore = false
+    buscar(caminho)
+      .then((dados) => {
+        if (!ignore) setResposta({ caminho, dados })
+      })
+      .catch((erro) => {
+        if (!ignore) setResposta({ caminho, erro })
+      })
+    return () => {
+      ignore = true
+    }
+  }, [caminho, buscar, tentativa])
 
-  return { dados, carregando, erro, recarregar: carregar }
+  function recarregar() {
+    setResposta({ caminho: null })
+    setTentativa((t) => t + 1)
+  }
+
+  const atual = resposta.caminho === caminho
+  return {
+    dados: atual ? resposta.dados : null,
+    erro: atual ? resposta.erro : null,
+    carregando: !atual,
+    recarregar,
+  }
 }
 
-export function usePaginado(endpoint, params = {}) {
-  const { dados, carregando, erro, recarregar } = useApi(endpoint)
-  const [pagina, setPagina] = useState(1)
+// Custom hook para requisições paginadas da API DRF: { count, next, previous, results }
+export function usePaginado(caminho) {
+  const [lista, setLista] = useState({ caminho: null, itens: [], proxima: null })
+  const [erro, setErro] = useState(null)
+  const [tentativa, setTentativa] = useState(0)
+  const [carregandoMais, setCarregandoMais] = useState(false)
 
+  useEffect(() => {
+    let ignore = false
+    api(caminho)
+      .then((dados) => {
+        if (ignore) return
+        setErro(null)
+        setLista({ caminho, itens: dados.results, proxima: dados.next })
+      })
+      .catch((err) => {
+        if (!ignore) setErro(err)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [caminho, tentativa])
+
+  async function carregarMais() {
+    setCarregandoMais(true)
+    try {
+      const dados = await api(lista.proxima)
+      setLista({
+        caminho,
+        itens: [...lista.itens, ...dados.results],
+        proxima: dados.next,
+      })
+    } catch (err) {
+      setErro(err)
+    }
+    setCarregandoMais(false)
+  }
+
+  function recarregar() {
+    setErro(null)
+    setLista({ caminho: null, itens: [], proxima: null })
+    setTentativa((t) => t + 1)
+  }
+
+  const atual = lista.caminho === caminho
   return {
-    dados: dados?.results || [],
-    carregando,
+    itens: atual ? lista.itens : [],
     erro,
+    carregando: (!atual && !erro) || carregandoMais,
+    temMais: atual && lista.proxima !== null,
+    carregarMais,
     recarregar,
-    pagina,
-    setPagina,
-    totalPaginas: 1,
-    count: dados?.results?.length || 0
   }
 }

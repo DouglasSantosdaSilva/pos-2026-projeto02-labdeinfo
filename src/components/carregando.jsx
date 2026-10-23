@@ -1,13 +1,12 @@
 import React from 'react'
 import { Spinner } from 'react-bootstrap'
 
-export function Carregando({ mensagem = 'A carregar...' }) {
+export function Carregando() {
   return (
-    <div className="d-flex justify-content-center align-items-center p-5">
-      <Spinner animation="border" role="status" variant="primary" className="me-2" />
-      <span>{mensagem}</span>
+    <div className="text-center my-5">
+      <Spinner animation="border" variant="primary" role="status">
+        <span className="visually-hidden">Carregando...</span>
+      </Spinner>
     </div>
   )
 }
-
-export default Carregando
