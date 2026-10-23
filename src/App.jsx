@@ -17,13 +17,13 @@ import { Perfil } from './pages/Perfil'
 import { Confirmar } from './pages/agendar/Confirmar'
 import { Enviado } from './pages/agendar/Enviado'
 import { EscolherHorario } from './pages/agendar/EscolherHorario'
-import { EscolherRecurso } from './pages/agendar/EscolherRecurso'
+import { EscolherLaboratorio } from './pages/agendar/EscolherLaboratorio'
 import { EscolherServico } from './pages/agendar/EscolherServico'
 import { Avaliar } from './pages/Avaliar'
 import { Inicio } from './pages/Inicio'
+import { Laboratorio } from './pages/Laboratorio'
+import { Laboratorios } from './pages/Laboratorios'
 import { MinhasReservas } from './pages/MinhasReservas'
-import { Recurso } from './pages/Recurso'
-import { Recursos } from './pages/Recursos'
 import { Reserva } from './pages/Reserva'
 
 // Páginas do Painel Administrativo
@@ -56,7 +56,7 @@ export function App() {
 
             {/* Fluxo de Agendamento / Reserva */}
             <Route path="/agendar" element={<EscolherServico />} />
-            <Route path="/agendar/recurso" element={<EscolherRecurso />} />
+            <Route path="/agendar/laboratorio" element={<EscolherLaboratorio />} />
             <Route path="/agendar/horario" element={<EscolherHorario />} />
             <Route path="/agendar/confirmar" element={<Confirmar />} />
             <Route path="/agendar/enviado" element={<Enviado />} />
@@ -66,9 +66,9 @@ export function App() {
             <Route path="/reservas/:id" element={<Reserva />} />
             <Route path="/reservas/:id/avaliar" element={<Avaliar />} />
 
-            {/* Consulta de Recursos e Perfil */}
-            <Route path="/recursos" element={<Recursos />} />
-            <Route path="/recursos/:id" element={<Recurso />} />
+            {/* Consulta de Laboratórios/Recursos e Perfil */}
+            <Route path="/laboratorios" element={<Laboratorios />} />
+            <Route path="/laboratorios/:id" element={<Laboratorio />} />
             <Route path="/perfil" element={<Perfil />} />
             <Route path="/perfil/senha" element={<AlterarSenha />} />
 
