@@ -1,112 +1,94 @@
 import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Form, Button, Alert } from 'react-bootstrap'
-import { cadastrar, login } from '../services/api'
-import { Publica } from '../components/Publica'
+import { cadastrar, mensagemDeErro } from '../api/client'
+import { useAuth } from '../AuthContext'
 
-export default function Cadastro() {
+export function Cadastro() {
+  const { entrar } = useAuth()
+  const navegar = useNavigate()
+
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [erro, setErro] = useState('')
-  const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState(null)
+  const [enviando, setEnviando] = useState(false)
 
-  const navigate = useNavigate()
-
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setErro('')
-    setCarregando(true)
+    setEnviando(true)
+    setErro(null)
 
     try {
-      await cadastrar({
-        nome,
-        email,
-        senha,
-      })
-
-      const tokenRes = await login(email, senha)
-
-      if (tokenRes?.access) {
-        localStorage.setItem('access', tokenRes.access)
-
-        if (tokenRes.refresh) {
-          localStorage.setItem('refresh', tokenRes.refresh)
-        }
-      } else if (tokenRes?.token) {
-        localStorage.setItem('token', tokenRes.token)
-      }
-
-      navigate('/')
-    } catch (err) {
-      setErro(err.message || 'Erro ao realizar o cadastro.')
-    } finally {
-      setCarregando(false)
+      await cadastrar(nome, email, senha)
+      // Faz o login automático após o cadastro
+      await entrar(email, senha)
+      navegar('/inicio')
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
+      setEnviando(false)
     }
   }
 
   return (
-    <Publica
-      titulo="Criar conta"
-      subTitulo="Preencha seus dados para começar."
-    >
-      {erro && (
-        <Alert variant="danger" role="alert">
-          {erro}
-        </Alert>
-      )}
+    <>
+      <div className="text-center mb-4">
+        <h2 className="fw-bold">Criar Conta</h2>
+        <p className="text-muted small">Cadastre-se para efetuar reservas de laboratório</p>
+      </div>
+
+      {erro && <Alert variant="danger">{erro}</Alert>}
 
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="cadastroNome">
-          <Form.Label>Nome completo</Form.Label>
+          <Form.Label className="fw-medium">Nome completo</Form.Label>
           <Form.Control
             type="text"
+            placeholder="Seu nome"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Digite seu nome completo"
-            autoComplete="name"
             required
           />
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="cadastroEmail">
-          <Form.Label>E-mail</Form.Label>
+          <Form.Label className="fw-medium">E-mail institucional</Form.Label>
           <Form.Control
             type="email"
+            placeholder="aluno@universidade.edu.br"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Digite seu e-mail"
-            autoComplete="email"
             required
           />
         </Form.Group>
 
         <Form.Group className="mb-4" controlId="cadastroSenha">
-          <Form.Label>Senha</Form.Label>
+          <Form.Label className="fw-medium">Senha</Form.Label>
           <Form.Control
             type="password"
+            placeholder="Crie uma senha segura"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
-            placeholder="Crie uma senha"
-            autoComplete="new-password"
             required
           />
         </Form.Group>
 
         <Button
           type="submit"
-          variant="primary"
-          size="lg"
-          className="w-100"
-          disabled={carregando}
+          variant="success"
+          className="w-100 py-2 fw-semibold"
+          disabled={enviando}
         >
-          {carregando ? 'Criando conta...' : 'Criar conta'}
+          {enviando ? 'Criando conta...' : 'Cadastrar'}
         </Button>
       </Form>
 
-      <p className="text-center text-muted small mt-4 mb-0">
-        Já tem uma conta? <Link to="/login">Entrar</Link>
-      </p>
-    </Publica>
+      <div className="mt-4 text-center small">
+        <span className="text-muted">Já possui uma conta? </span>
+        <Link to="/login" className="text-success text-decoration-none fw-medium">
+          Fazer login
+        </Link>
+      </div>
+    </>
   )
 }

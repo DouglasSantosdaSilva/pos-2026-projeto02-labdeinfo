@@ -1,151 +1,98 @@
-import React, { useState } from 'react'
-import { Card, Button, ListGroup, Badge } from 'react-bootstrap'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useApi } from '../hooks/useApi'
-import { cancelarAgendamento, confirmarAgendamento, concluirAgendamento, mensagemDeErro } from '../services/api'
+import { useState } from 'react'
+import { Alert, Button, Card } from '@heroui/react'
+import { buttonVariants } from '@heroui/styles'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { api, mensagemDeErro } from '../api/client'
+import { useAuth } from '../AuthContext'
 import { Carregando } from '../components/Carregando'
-import { Erro } from '../components/Erro'
-import { StatusReserva } from '../components/StatusReserva'
-import { Estrelas } from '../components/Estrelas'
 import { ConfirmarAcao } from '../components/ConfirmarAcao'
+import { Erro } from '../components/Erro'
+import { Estrelas } from '../components/Estrelas'
+import { StatusConsulta } from '../components/StatusConsulta'
+import { formatarData, formatarHora } from '../formatos'
+import { useApi } from '../hooks/useApi'
 
-export default function DetalheReserva({ usuario }) {
+export function Consulta() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { dados: agendamento, carregando, erro, recarregar } = useApi(`/agendamentos/${id}/`)
+  const { pode } = useAuth()
+  const { dados: consulta, erro, carregando, recarregar } = useApi(`/agendamentos/${id}/`)
+  const [erroAcao, setErroAcao] = useState(null)
+  const [acao, setAcao] = useState(null)
 
-  const [modalCancelar, setModalCancelar] = useState(false)
-  const [processando, setProcessando] = useState(false)
-  const [erroAcao, setErroAcao] = useState('')
+  if (erro) return <Erro erro={erro} tentarDeNovo={recarregar} />
+  if (carregando) return <Carregando />
 
-  if (carregando) return <Carregando mensagem="Buscando detalhes da reserva..." />
-  if (erro) return <Erro mensagem="Não foi possível carregar esta reserva." onTentarDeNovo={recarregar} />
+  const ativa = ['solicitado', 'confirmado'].includes(consulta.status)
+  const duracao = (new Date(consulta.fim) - new Date(consulta.inicio)) / 60000
 
-  const permissoes = usuario?.permissoes || []
-  const isCoordenador = permissoes.includes('api.change_organizacao')
-
-  const { servico_nome, recurso_nome, inicio, fim, status, observacoes, nota, comentario, cliente_nome } = agendamento
-
-  const handleCancelar = async () => {
-    setProcessando(true)
-    setErroAcao('')
+  async function executar(acao) {
+    setErroAcao(null)
     try {
-      await cancelarAgendamento(id)
-      setModalCancelar(false)
+      await api(`/agendamentos/${id}/${acao}/`, { method: 'POST' })
       recarregar()
-    } catch (err) {
-      setErroAcao(mensagemDeErro(err))
-    } finally {
-      setProcessando(false)
+    } catch (erro) {
+      setErroAcao(mensagemDeErro(erro))
     }
   }
 
-  const handleConfirmarCoord = async () => {
-    setProcessando(true)
-    try {
-      await confirmarAgendamento(id)
-      recarregar()
-    } catch (err) {
-      setErroAcao(mensagemDeErro(err))
-    } finally {
-      setProcessando(false)
-    }
-  }
-
-  const handleConcluirCoord = async () => {
-    setProcessando(true)
-    try {
-      await concluirAgendamento(id)
-      recarregar()
-    } catch (err) {
-      setErroAcao(mensagemDeErro(err))
-    } finally {
-      setProcessando(false)
-    }
+  function confirmarAcao() {
+    executar(acao)
+    setAcao(null)
   }
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Button variant="outline-secondary" size="sm" className="mb-3" onClick={() => navigate(-1)}>
-        &larr; Voltar
-      </Button>
-
-      {erroAcao && <Erro mensagem={erroAcao} />}
-
-      <Card className="shadow-sm border-0 mb-4">
-        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">{servico_nome}</h5>
-          <StatusReserva status={status} />
-        </Card.Header>
-        <ListGroup variant="flush">
-          <ListGroup.Item>
-            <span className="text-muted d-block">Laboratório:</span>
-            <strong>{recurso_nome}</strong>
-          </ListGroup.Item>
-          {isCoordenador && (
-            <ListGroup.Item>
-              <span className="text-muted d-block">Aluno:</span>
-              <strong>{cliente_nome}</strong>
-            </ListGroup.Item>
+    <Card>
+      <Card.Header className="flex justify-between items-center">
+        <h4 className="mb-0">{consulta.servico_nome}</h4>
+        <StatusConsulta status={consulta.status} />
+      </Card.Header>
+      <div className="divide-y divide-gray-200">
+        <div className="p-3"><strong>Médico:</strong> {consulta.recurso_nome}</div>
+        {pode('api.view_agendamento') && (
+          <div className="p-3"><strong>Paciente:</strong> {consulta.cliente_nome}</div>
+        )}
+        <div className="p-3"><strong>Dia:</strong> {formatarData(consulta.inicio)}</div>
+        <div className="p-3">
+          <strong>Horário:</strong> {formatarHora(consulta.inicio)} às {formatarHora(consulta.fim)} ({duracao} min)
+        </div>
+        {consulta.observacoes && (
+          <div className="p-3"><strong>Observações:</strong> {consulta.observacoes}</div>
+        )}
+        {consulta.nota && (
+          <div className="p-3">
+            <strong>Avaliação:</strong> <Estrelas nota={consulta.nota} />
+            {consulta.comentario && <p className="mb-0 mt-1">{consulta.comentario}</p>}
+          </div>
+        )}
+      </div>
+      <Card.Content>
+        {erroAcao && <Alert status="danger">{erroAcao}</Alert>}
+        <div className="flex gap-2">
+          <Button variant="ghost" onPress={() => navigate(-1)}>Voltar</Button>
+          {pode('api.avaliar_agendamento') && consulta.status === 'concluido' && !consulta.nota && (
+            <Link to={`/consultas/${id}/avaliar`} className={buttonVariants({ variant: 'primary' })}>
+              <i className="bi bi-star"></i> Avaliar
+            </Link>
           )}
-          <ListGroup.Item>
-            <span className="text-muted d-block">Data e Horário:</span>
-            <strong>
-              {new Date(inicio).toLocaleDateString('pt-BR')} das {new Date(inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} às {new Date(fim).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </strong>
-          </ListGroup.Item>
-          {observacoes && (
-            <ListGroup.Item>
-              <span className="text-muted d-block">Observações:</span>
-              <span>{observacoes}</span>
-            </ListGroup.Item>
-          )}
-          {nota && (
-            <ListGroup.Item>
-              <span className="text-muted d-block mb-1">Avaliação:</span>
-              <Estrelas nota={nota} />
-              {comentario && <p className="mb-0 mt-1 small text-dark">{comentario}</p>}
-            </ListGroup.Item>
-          )}
-        </ListGroup>
-
-        <Card.Footer className="bg-white py-3 d-flex gap-2 justify-content-end">
-          {/* Botões do Coordenador */}
-          {isCoordenador && status === 'solicitado' && permissoes.includes('api.confirmar_agendamento') && (
-            <Button variant="success" onClick={handleConfirmarCoord} disabled={processando}>
-              Confirmar
+          {pode('api.confirmar_agendamento') && consulta.status === 'solicitado' && (
+            <Button variant="primary" onPress={() => setAcao('confirmar')}>
+              <i className="bi bi-check-lg"></i> Confirmar
             </Button>
           )}
-          {isCoordenador && status === 'confirmado' && permissoes.includes('api.concluir_agendamento') && (
-            <Button variant="primary" onClick={handleConcluirCoord} disabled={processando}>
-              Concluir
+          {pode('api.concluir_agendamento') && consulta.status === 'confirmado' && (
+            <Button variant="primary" onPress={() => setAcao('concluir')}>
+              <i className="bi bi-check2-all"></i> Concluir
             </Button>
           )}
-
-          {/* Botão Avaliar para o Aluno */}
-          {!isCoordenador && status === 'concluido' && !nota && permissoes.includes('api.avaliar_agendamento') && (
-            <Button variant="warning" onClick={() => navigate(`/reservas/${id}/avaliar`)}>
-              Avaliar
+          {pode('api.cancelar_agendamento') && ativa && (
+            <Button variant="danger-soft" className="ms-auto" onPress={() => setAcao('cancelar')}>
+              Cancelar
             </Button>
           )}
-
-          {/* Botão Cancelar */}
-          {(status === 'solicitado' || status === 'confirmado') && permissoes.includes('api.cancelar_agendamento') && (
-            <Button variant="outline-danger" onClick={() => setModalCancelar(true)} disabled={processando}>
-              Cancelar Reserva
-            </Button>
-          )}
-        </Card.Footer>
-      </Card>
-
-      <ConfirmarAcao
-        show={modalCancelar}
-        onHide={() => setModalCancelar(false)}
-        onConfirm={handleCancelar}
-        titulo="Cancelar Reserva"
-        mensagem="Tem certeza de que deseja cancelar esta reserva?"
-        carregando={processando}
-      />
-    </div>
+        </div>
+      </Card.Content>
+      <ConfirmarAcao acao={acao} onConfirmar={confirmarAcao} onFechar={() => setAcao(null)} />
+    </Card>
   )
 }

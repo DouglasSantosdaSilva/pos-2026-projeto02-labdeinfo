@@ -1,98 +1,98 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import { useAuth } from './AuthContext'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from './AuthProvider'
 import { Layout } from './components/Layout'
-import { ProtectedRoute } from './routes/ProtectedRoute'
+import { Publica } from './components/Publica'
 
-// Páginas de Autenticação & Perfil (direto em /pages/)
-import Entrada from './pages/Entrada'
-import Cadastro from './pages/Cadastro'
-import Login from './pages/Login'
-import EsqueciSenha from './pages/EsqueciSenha'
-import Perfil from './pages/Perfil'
-import AlterarSenha from './pages/AlterarSenha'
+// Painel Administrativo
+import { AConfirmar } from './pages/admin/AConfirmar'
+import { Agenda } from './pages/admin/Agenda'
+import { Avaliacoes } from './pages/admin/Avaliacoes'
+import { Horarios } from './pages/admin/Horarios'
+import { Negocio } from './pages/admin/Negocio'
+import { EditarRecurso, NovoRecurso } from './pages/admin/Recurso'
+import { Recursos } from './pages/admin/Recursos'
+import { EditarServico, NovoServico } from './pages/admin/Servico'
+import { Servicos } from './pages/admin/Servicos'
 
-// Páginas do Aluno / Usuário (direto em /pages/)
-import Inicio from './pages/Inicio'
-import MinhasReservas from './pages/MinhasReservas'
-import Reserva from './pages/Reserva'
-import Avaliar from './pages/Avaliar'
-import Laboratorios from './pages/Laboratorios'
-import Laboratorio from './pages/Laboratorio'
+// Fluxo de Agendamento
+import { Confirmar } from './pages/agendar/Confirmar'
+import { EscolherHorario } from './pages/agendar/EscolherHorario'
+import { EscolherLaboratorio } from './pages/agendar/EscolherLaboratorio'
+import { EscolherServico } from './pages/agendar/EscolherServico'
+import { Enviado } from './pages/agendar/Enviado'
 
-// Fluxo de Agendamento (em /pages/agendar/)
-import EscolherServico from './pages/agendar/EscolherServico'
-import EscolherLaboratorio from './pages/agendar/EscolherLaboratorio'
-import EscolherHorario from './pages/agendar/EscolherHorario'
-import Confirmar from './pages/agendar/Confirmar'
-import Enviado from './pages/agendar/Enviado'
+// Páginas de Usuário e Reservas
+import { AlterarSenha } from './pages/AlterarSenha'
+import { Avaliar } from './pages/Avaliar'
+import { Cadastro } from './pages/Cadastro'
+import { Entrada } from './pages/Entrada'
+import { EsqueciSenha } from './pages/EsqueciSenha'
+import { Inicio } from './pages/Inicio'
+import { Laboratorio } from './pages/Laboratorio'
+import { Laboratorios } from './pages/Laboratorios'
+import { Login } from './pages/Login'
+import { MinhasReservas } from './pages/MinhasReservas'
+import { NaoEncontrado } from './pages/NaoEncontrado'
+import { Perfil } from './pages/Perfil'
+import { Reserva } from './pages/Reserva'
 
-// Páginas Administrativas (em /pages/admin/)
-import Agenda from './pages/admin/Agenda'
-import AConfirmar from './pages/admin/AConfirmar'
-import Negocio from './pages/admin/Negocio'
-import LaboratoriosAdmin from './pages/admin/Laboratorios'
-import FormLaboratorio from './pages/admin/Laboratorio'
-import Horarios from './pages/admin/Horarios'
-import Servicos from './pages/admin/Servicos'
-import FormServico from './pages/admin/Servico'
-import Avaliacoes from './pages/admin/Avaliacoes'
-
-import NaoEncontrado from './pages/NaoEncontrado'
-
-export default function App() {
-  const { usuario, logout } = useAuth()
-
+function App() {
   return (
-    <Routes>
-      {/* Rotas Públicas */}
-      <Route path="/entrada" element={<Entrada />} />
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Rotas Públicas */}
+          <Route element={<Publica />}>
+            <Route index element={<Entrada />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          </Route>
 
-      {/* Rotas Protegidas (Aluno & Coordenador) */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<Layout usuario={usuario} onLogout={logout} />}>
-          <Route path="/" element={<Inicio />} />
-          <Route path="/minhas-reservas" element={<MinhasReservas />} />
-          <Route path="/reservas/:id" element={<Reserva usuario={usuario} />} />
-          <Route path="/reservas/:id/avaliar" element={<Avaliar />} />
-          <Route path="/laboratorios" element={<Laboratorios />} />
-          <Route path="/laboratorios/:id" element={<Laboratorio />} />
+          {/* Rotas com Layout Principal */}
+          <Route element={<Layout />}>
+            <Route path="/inicio" element={<Inicio />} />
 
-          {/* Agendamento */}
-          <Route path="/agendar" element={<EscolherServico />} />
-          <Route path="/agendar/laboratorio" element={<EscolherLaboratorio />} />
-          <Route path="/agendar/horario" element={<EscolherHorario />} />
-          <Route path="/agendar/confirmar" element={<Confirmar />} />
-          <Route path="/agendar/enviado" element={<Enviado />} />
+            {/* Agendamento */}
+            <Route path="/agendar" element={<EscolherServico />} />
+            <Route path="/agendar/laboratorio" element={<EscolherLaboratorio />} />
+            <Route path="/agendar/horario" element={<EscolherHorario />} />
+            <Route path="/agendar/confirmar" element={<Confirmar />} />
+            <Route path="/agendar/enviado" element={<Enviado />} />
 
-          {/* Perfil */}
-          <Route path="/perfil" element={<Perfil onLogout={logout} />} />
-          <Route path="/alterar-senha" element={<AlterarSenha />} />
-        </Route>
-      </Route>
+            {/* Minhas Reservas */}
+            <Route path="/reservas" element={<MinhasReservas />} />
+            <Route path="/reservas/:id" element={<Reserva />} />
+            <Route path="/reservas/:id/avaliar" element={<Avaliar />} />
 
-      {/* Rotas do Coordenador */}
-      <Route element={<ProtectedRoute requerCoordenador={true} />}>
-        <Route element={<Layout usuario={usuario} onLogout={logout} />}>
-          <Route path="/admin/ocupacao" element={<Agenda />} />
-          <Route path="/admin/aconfirmar" element={<AConfirmar />} />
-          <Route path="/admin/negocio" element={<Negocio />} />
-          <Route path="/admin/laboratorios" element={<LaboratoriosAdmin />} />
-          <Route path="/admin/laboratorios/novo" element={<FormLaboratorio />} />
-          <Route path="/admin/laboratorios/:id" element={<FormLaboratorio />} />
-          <Route path="/admin/laboratorios/:id/horarios" element={<Horarios />} />
-          <Route path="/admin/servicos" element={<Servicos />} />
-          <Route path="/admin/servicos/novo" element={<FormServico />} />
-          <Route path="/admin/servicos/:id" element={<FormServico />} />
-          <Route path="/admin/avaliacoes" element={<Avaliacoes />} />
-        </Route>
-      </Route>
+            {/* Perfil do Usuário */}
+            <Route path="/perfil" element={<Perfil />} />
+            <Route path="/perfil/senha" element={<AlterarSenha />} />
 
-      {/* 404 */}
-      <Route path="*" element={<NaoEncontrado />} />
-    </Routes>
+            {/* Visualização de Laboratórios */}
+            <Route path="/laboratorios" element={<Laboratorios />} />
+            <Route path="/laboratorios/:id" element={<Laboratorio />} />
+
+            {/* Administração */}
+            <Route path="/admin/agenda" element={<Agenda />} />
+            <Route path="/admin/confirmar" element={<AConfirmar />} />
+            <Route path="/admin/negocio" element={<Negocio />} />
+            <Route path="/admin/recursos" element={<Recursos />} />
+            <Route path="/admin/recursos/novo" element={<NovoRecurso />} />
+            <Route path="/admin/recursos/:id" element={<EditarRecurso />} />
+            <Route path="/admin/recursos/:id/horarios" element={<Horarios />} />
+            <Route path="/admin/servicos" element={<Servicos />} />
+            <Route path="/admin/servicos/novo" element={<NovoServico />} />
+            <Route path="/admin/servicos/:id" element={<EditarServico />} />
+            <Route path="/admin/avaliacoes" element={<Avaliacoes />} />
+
+            {/* Rota 404 */}
+            <Route path="*" element={<NaoEncontrado />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
+
+export default App

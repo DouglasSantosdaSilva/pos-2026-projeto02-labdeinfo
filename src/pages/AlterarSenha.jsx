@@ -1,85 +1,113 @@
 import React, { useState } from 'react'
-import { Card, Form, Button } from 'react-bootstrap'
+import { Alert, Button, Card, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { alterarSenha, mensagemDeErro } from '../services/api'
-import { Erro } from '../components/Erro'
+import { api, mensagemDeErro } from '../../api/client'
 
-export default function AlterarSenha() {
+export function AlterarSenha() {
   const navigate = useNavigate()
   const [senhaAtual, setSenhaAtual] = useState('')
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmacao, setConfirmacao] = useState('')
-  const [salvando, setSalvando] = useState(false)
-  const [erroMsg, setErroMsg] = useState('')
+  const [erro, setErro] = useState(null)
+  const [erros, setErros] = useState({})
+  const [enviando, setEnviando] = useState(false)
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setErroMsg('')
+    setErro(null)
+    setErros({})
 
     if (novaSenha !== confirmacao) {
-      setErroMsg('A confirmação não confere com a nova senha.')
+      setErros({ confirmacao: ['As senhas não conferem.'] })
       return
     }
 
-    setSalvando(true)
+    setEnviando(true)
     try {
-      await alterarSenha(senhaAtual, novaSenha)
-      navigate('/perfil', { state: { mensagem: 'Senha alterada com sucesso!' } })
+      await api('/auth/alterar-senha/', {
+        method: 'POST',
+        body: { senha_atual: senhaAtual, nova_senha: novaSenha },
+      })
+      navigate('/perfil', { state: { mensagem: 'Senha alterada com sucesso.' } })
     } catch (err) {
-      setErroMsg(mensagemDeErro(err))
-    } finally {
-      setSalvando(false)
+      setErro(mensagemDeErro(err))
+      setErros(err.dados ?? {})
+      setEnviando(false)
     }
   }
 
   return (
-    <Card className="shadow-sm border-0 max-w-md mx-auto">
-      <Card.Body className="p-4">
-        <h3 className="mb-4">Alterar Senha</h3>
+    <div className="d-flex justify-content-center">
+      <div className="w-100" style={{ maxWidth: '600px' }}>
+        <Card className="shadow-sm border-0">
+          <Card.Body className="p-4">
+            <h2 className="fw-bold mb-4">Alterar Senha</h2>
 
-        {erroMsg && <Erro mensagem={erroMsg} />}
+            {erro && <Alert variant="danger">{erro}</Alert>}
 
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Senha Atual</Form.Label>
-            <Form.Control
-              type="password"
-              value={senhaAtual}
-              onChange={(e) => setSenhaAtual(e.target.value)}
-              required
-            />
-          </Form.Group>
+            <Form onSubmit={handleSubmit}>
+              <Form.Group className="mb-3" controlId="senhaAtual">
+                <Form.Label className="fw-medium">Senha atual</Form.Label>
+                <Form.Control
+                  type="password"
+                  value={senhaAtual}
+                  onChange={(e) => setSenhaAtual(e.target.value)}
+                  isInvalid={!!erros.senha_atual}
+                  required
+                />
+                <Form.Control.Feedback type="invalid">
+                  {erros.senha_atual?.join(' ')}
+                </Form.Control.Feedback>
+              </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Nova Senha</Form.Label>
-            <Form.Control
-              type="password"
-              value={novaSenha}
-              onChange={(e) => setNovaSenha(e.target.value)}
-              required
-            />
-          </Form.Group>
+              <Form.Group className="mb-3" controlId="novaSenha">
+                <Form.Label className="fw-medium">Nova senha</Form.Label>
+                <Form.Control
+                  type="password"
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  isInvalid={!!erros.nova_senha}
+                  required
+                />
+                <Form.Control.Feedback type="invalid">
+                  {erros.nova_senha?.join(' ')}
+                </Form.Control.Feedback>
+              </Form.Group>
 
-          <Form.Group className="mb-4">
-            <Form.Label>Confirmar Nova Senha</Form.Label>
-            <Form.Control
-              type="password"
-              value={confirmacao}
-              onChange={(e) => setConfirmacao(e.target.value)}
-              required
-            />
-          </Form.Group>
+              <Form.Group className="mb-4" controlId="confirmacao">
+                <Form.Label className="fw-medium">Confirme a nova senha</Form.Label>
+                <Form.Control
+                  type="password"
+                  value={confirmacao}
+                  onChange={(e) => setConfirmacao(e.target.value)}
+                  isInvalid={!!erros.confirmacao}
+                  required
+                />
+                <Form.Control.Feedback type="invalid">
+                  {erros.confirmacao?.join(' ')}
+                </Form.Control.Feedback>
+              </Form.Group>
 
-          <div className="d-flex gap-2">
-            <Button variant="secondary" className="w-100" onClick={() => navigate('/perfil')}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" className="w-100" disabled={salvando}>
-              {salvando ? 'Salvando...' : 'Salvar'}
-            </Button>
-          </div>
-        </Form>
-      </Card.Body>
-    </Card>
+              <div className="d-flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline-secondary"
+                  onClick={() => navigate('/perfil')}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="success"
+                  disabled={enviando}
+                >
+                  {enviando ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </Form>
+          </Card.Body>
+        </Card>
+      </div>
+    </div>
   )
 }

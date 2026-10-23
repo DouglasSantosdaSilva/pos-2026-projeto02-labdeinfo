@@ -1,62 +1,83 @@
 import React, { useState } from 'react'
-import { Form, Button, Alert } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import { Publica } from '../components/Publica'
-import { redefinirSenha, mensagemDeErro } from '../services/api'
-import { Erro } from '../components/Erro'
+import { Form, Button, Alert } from 'react-bootstrap'
+import { redefinirSenha, mensagemDeErro } from '../api/client'
 
-export default function EsqueciSenha() {
-  const [email, setEmail] = u
-  seState('')
-  const [enviado, setEnviado] = useState(false)
-  const [carregando, setCarregando] = useState(false)
-  const [erroMsg, setErroMsg] = useState('')
+export function EsqueciSenha() {
+  const [email, setEmail] = useState('')
+  const [sucesso, setSucesso] = useState(false)
+  const [erro, setErro] = useState(null)
+  const [enviando, setEnviando] = useState(false)
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setCarregando(true)
-    setErroMsg('')
+    setEnviando(true)
+    setErro(null)
+    setSucesso(false)
 
     try {
       await redefinirSenha(email)
-      setEnviado(true)
-    } catch (err) {
-      setErroMsg(mensagemDeErro(err))
+      setSucesso(true)
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
     } finally {
-      setCarregando(false)
+      setEnviando(false)
     }
   }
 
   return (
-    <Publica titulo="Esqueci minha senha" subTitulo="Digite seu e-mail cadastrado">
-      {erroMsg && <Erro mensagem={erroMsg} />}
+    <>
+      <div className="text-center mb-4">
+        <h2 className="fw-bold">Recuperar Senha</h2>
+        <p className="text-muted small">
+          Informe seu e-mail institucional para receber as instruções de redefinição
+        </p>
+      </div>
 
-      {enviado ? (
-        <Alert variant="info" className="small">
-          Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha.
+      {erro && <Alert variant="danger">{erro}</Alert>}
+
+      {sucesso ? (
+        <Alert variant="success" className="text-center py-4">
+          <i className="bi bi-check-circle-fill fs-2 d-block mb-2"></i>
+          <h5 className="fw-bold">E-mail enviado!</h5>
+          <p className="mb-0 small">
+            Se o e-mail <strong>{email}</strong> estiver cadastrado em nosso sistema, você receberá um link com as instruções para redefinir sua senha.
+          </p>
+          <div className="mt-4">
+            <Link to="/login" className="btn btn-outline-success btn-sm fw-medium">
+              Voltar para o Login
+            </Link>
+          </div>
         </Alert>
       ) : (
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-4">
-            <Form.Label>E-mail</Form.Label>
+          <Form.Group className="mb-4" controlId="esqueciEmail">
+            <Form.Label className="fw-medium">E-mail institucional</Form.Label>
             <Form.Control
               type="email"
-              placeholder="seu@email.com"
+              placeholder="aluno@universidade.edu.br"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </Form.Group>
 
-          <Button type="submit" variant="primary" className="w-100 py-2 mb-3" disabled={carregando}>
-            {carregando ? 'Enviando...' : 'Enviar link'}
+          <Button
+            type="submit"
+            variant="success"
+            className="w-100 py-2 fw-semibold"
+            disabled={enviando}
+          >
+            {enviando ? 'Enviando...' : 'Enviar instruções'}
           </Button>
+
+          <div className="mt-4 text-center small">
+            <Link to="/login" className="text-muted text-decoration-none">
+              <i className="bi bi-arrow-left me-1"></i> Voltar ao login
+            </Link>
+          </div>
         </Form>
       )}
-
-      <div className="text-center small mt-3">
-        <Link to="/login">Voltar para o login</Link>
-      </div>
-    </Publica>
+    </>
   )
 }

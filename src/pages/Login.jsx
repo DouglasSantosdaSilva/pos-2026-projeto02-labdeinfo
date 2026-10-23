@@ -1,69 +1,51 @@
 import React, { useState } from 'react'
-import { Form, Button } from 'react-bootstrap'
-import { useNavigate, Link } from 'react-router-dom'
-import { Publica } from '../components/Publica'
-import { login, mensagemDeErro } from '../services/api'
-import { Erro } from '../components/Erro'
+import { Link } from 'react-router-dom'
+import { Form, Button, Alert } from 'react-bootstrap'
+import { mensagemDeErro } from '../api/client'
+import { useAuth } from '../AuthContext'
 
-export default function Login() {
-  const navigate = useNavigate()
+export function Login() {
+  const { entrar } = useAuth()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [carregando, setCarregando] = useState(false)
-  const [erroMsg, setErroMsg] = useState('')
+  const [erro, setErro] = useState(null)
+  const [enviando, setEnviando] = useState(false)
 
- 
-const handleSubmit = async (e) => {
-  e.preventDefault()
-  setCarregando(true)
-  setErroMsg('')
-
-  try {
-    const resposta = await login({
-    email,
-    senha,
-    organizacao: 'laboratorio-de-informatica'
-    })
-
-    localStorage.setItem('access', resposta.access)
-
-    if (resposta.refresh) {
-      localStorage.setItem('refresh', resposta.refresh)
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setEnviando(true)
+    setErro(null)
+    try {
+      await entrar(email, senha)
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
+      setEnviando(false)
     }
-
-    window.location.href = '/'
-  } catch (err) {
-    console.error('Erro no login:', err)
-
-    if (err.status === 400) {
-      setErroMsg(err.message || 'Organização, e-mail ou senha inválidos.')
-    } else {
-      setErroMsg(err.message || mensagemDeErro(err))
-    }
-  } finally {
-    setCarregando(false)
   }
-}
-
 
   return (
-    <Publica titulo="Entrar" subTitulo="Acesse sua conta para gerenciar reservas">
-      {erroMsg && <Erro mensagem={erroMsg} />}
+    <>
+      <div className="text-center mb-4">
+        <h2 className="fw-bold">Acessar Lab Info</h2>
+        <p className="text-muted small">Informe suas credenciais para gerenciar suas reservas</p>
+      </div>
+
+      {erro && <Alert variant="danger">{erro}</Alert>}
 
       <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>E-mail</Form.Label>
+        <Form.Group className="mb-3" controlId="loginEmail">
+          <Form.Label className="fw-medium">E-mail institucional</Form.Label>
           <Form.Control
             type="email"
-            placeholder="seu@email.com"
+            placeholder="aluno@universidade.edu.br"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </Form.Group>
 
-        <Form.Group className="mb-2">
-          <Form.Label>Senha</Form.Label>
+        <Form.Group className="mb-4" controlId="loginSenha">
+          <Form.Label className="fw-medium">Senha</Form.Label>
           <Form.Control
             type="password"
             placeholder="Sua senha"
@@ -73,20 +55,24 @@ const handleSubmit = async (e) => {
           />
         </Form.Group>
 
-        <div className="text-end mb-4">
-          <Link to="/esqueci-senha" className="small text-decoration-none">
-            Esqueci minha senha
-          </Link>
-        </div>
-
-        <Button type="submit" variant="primary" className="w-100 py-2 mb-3" disabled={carregando}>
-          {carregando ? 'Entrando...' : 'Entrar'}
+        <Button
+          type="submit"
+          variant="success"
+          className="w-100 py-2 fw-semibold"
+          disabled={enviando}
+        >
+          {enviando ? 'Entrando...' : 'Entrar'}
         </Button>
-
-        <div className="text-center small">
-          Não tem uma conta? <Link to="/cadastro">Criar conta</Link>
-        </div>
       </Form>
-    </Publica>
+
+      <div className="mt-4 d-flex justify-content-between align-items-center small">
+        <Link to="/cadastro" className="text-success text-decoration-none fw-medium">
+          Criar conta
+        </Link>
+        <Link to="/esqueci-senha" className="text-muted text-decoration-none">
+          Esqueci minha senha
+        </Link>
+      </div>
+    </>
   )
 }

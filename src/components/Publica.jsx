@@ -1,41 +1,39 @@
 import React from 'react'
-import { Container, Card, Row, Col } from 'react-bootstrap'
-import { Foto } from './Foto'
+import { Navigate, Outlet } from 'react-router-dom'
+import { Card, Container } from 'react-bootstrap'
+import { useAuth } from '../AuthContext'
+import { Carregando } from './Carregando'
 
-export function Publica({ children, titulo, subTitulo, logoUrl, nomeOrganizacao = 'Laboratório de Informática' }) {
+export function Publica({ titulo, subTitulo, children }) {
+  const { usuario, carregando, inicio } = useAuth()
+
+  // 1. Exibe indicador de carregamento durante verificação da sessão
+  if (carregando) {
+    return <Carregando />
+  }
+
+  // 2. Se o usuário já está logado, redireciona para a página inicial correspondente
+  if (usuario) {
+    return <Navigate to={inicio || '/inicio'} replace />
+  }
+
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column justify-content-center align-items-center py-5">
-      <Container>
-        <Row className="justify-content-center">
-          <Col xs={12} sm={10} md={8} lg={5}>
-            {/* Branding / Marca */}
-            <div className="text-center mb-4">
-              <Foto
-                src={logoUrl}
-                alt={nomeOrganizacao}
-                tamanho={72}
-                arredondado={true}
-                className="mb-2 shadow-sm"
-              />
-              <h2 className="fw-bold text-dark fs-4 mt-2">{nomeOrganizacao}</h2>
-            </div>
+    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5">
+      <Container style={{ maxWidth: '480px' }}>
+        <Card className="shadow-sm border-0 rounded-3">
+          <Card.Body className="p-4 p-md-5">
+            {/* Título opcional caso a página passe como prop */}
+            {titulo && (
+              <div className="text-center mb-4">
+                <h2 className="fw-bold h4 mb-1">{titulo}</h2>
+                {subTitulo && <p className="text-muted small mb-0">{subTitulo}</p>}
+              </div>
+            )}
 
-            {/* Cartão de Conteúdo da Tela (Login, Cadastro, etc.) */}
-            <Card className="shadow-sm border-0 rounded-3">
-              <Card.Body className="p-4">
-                {titulo && <Card.Title as="h3" className="fs-5 fw-bold text-center mb-1">{titulo}</Card.Title>}
-                {subTitulo && <p className="text-muted text-center small mb-4">{subTitulo}</p>}
-                
-                {children}
-              </Card.Body>
-            </Card>
-
-            {/* Rodapé Simplificado */}
-            <div className="text-center text-muted small mt-4">
-              App de Agendamento do Laboratório de Informática
-            </div>
-          </Col>
-        </Row>
+            {/* Suporta tanto o uso como Rota Pai (<Outlet />) quanto Componente Envelope ({children}) */}
+            {children || <Outlet />}
+          </Card.Body>
+        </Card>
       </Container>
     </div>
   )

@@ -1,54 +1,46 @@
 import React from 'react'
-import { Card, Row, Col, Button } from 'react-bootstrap'
-import { useNavigate } from 'react-router-dom'
-import { useApi } from '../hooks/useApi'
+import { Alert, Card, Row, Col } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import { Carregando } from '../components/Carregando'
+import { CarregarMais } from '../components/CarregarMais'
 import { Erro } from '../components/Erro'
 import { Foto } from '../components/Foto'
+import { usePaginado } from '../hooks/useApi'
 
-export default function Laboratorios() {
-  const navigate = useNavigate()
-  const { dados, carregando, erro, recarregar } = useApi('/recursos/?ativo=true')
+export function Laboratorios() {
+  const recursos = usePaginado('/recursos/')
 
-  if (carregando) return <Carregando mensagem="Buscando laboratórios..." />
-  if (erro) return <Erro mensagem="Não foi possível carregar os laboratórios." onTentarDeNovo={recarregar} />
-
-  const lista = dados?.results || dados || []
+  if (recursos.erro) return <Erro erro={recursos.erro} tentarDeNovo={recursos.recarregar} />
 
   return (
-    <div>
-      <h2 className="mb-1">Laboratórios de Informática</h2>
-      <p className="text-muted mb-4">Conheça nossos laboratórios e infraestrutura.</p>
+    <>
+      <h2 className="fw-bold mb-4">Laboratórios</h2>
 
-      {lista.length === 0 ? (
-        <p className="text-muted">Nenhum laboratório cadastrado.</p>
-      ) : (
-        <Row className="g-4">
-          {lista.map((lab) => (
-            <Col md={6} lg={4} key={lab.id}>
-              <Card className="shadow-sm border-0 h-100">
-                <Card.Body className="d-flex flex-column">
-                  <div className="d-flex align-items-center gap-3 mb-3">
-                    <Foto src={lab.foto} alt={lab.nome} tamanho={64} arredondado={false} />
-                    <div>
-                      <h5 className="mb-1">{lab.nome}</h5>
-                      <span className="small text-muted">💻 {lab.capacidade} computadores</span>
-                    </div>
+      {!recursos.carregando && recursos.itens.length === 0 && (
+        <Alert variant="info">Nenhum laboratório cadastrado.</Alert>
+      )}
+
+      <Row xs={1} md={2} lg={3} className="g-4 mb-4">
+        {recursos.itens.map((recurso) => (
+          <Col key={recurso.id}>
+            <Link to={`/laboratorios/${recurso.id}`} className="text-decoration-none text-dark">
+              <Card className="h-100 shadow-sm border-0">
+                <Card.Body className="d-flex gap-3 align-items-start">
+                  <Foto src={recurso.foto} tamanho={64} />
+                  <div>
+                    <Card.Title className="fw-bold h5 mb-1">{recurso.nome}</Card.Title>
+                    <Card.Text className="text-muted small mb-0">
+                      {recurso.bio}
+                    </Card.Text>
                   </div>
-                  <p className="text-muted small mb-3">{lab.bio || 'Sem descrição.'}</p>
-                  <Button
-                    variant="outline-primary"
-                    className="mt-auto w-100"
-                    onClick={() => navigate(`/laboratorios/${lab.id}`)}
-                  >
-                    Ver perfil e horários
-                  </Button>
                 </Card.Body>
               </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
-    </div>
+            </Link>
+          </Col>
+        ))}
+      </Row>
+
+      {recursos.carregando ? <Carregando /> : <CarregarMais lista={recursos} />}
+    </>
   )
 }

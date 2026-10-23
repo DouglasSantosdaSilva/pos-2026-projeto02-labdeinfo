@@ -1,63 +1,93 @@
 import React, { useState } from 'react'
-import { Card, Form, Button } from 'react-bootstrap'
-import { useParams, useNavigate } from 'react-router-dom'
-import { avaliarAgendamento, mensagemDeErro } from '../services/api'
-import { Estrelas } from '../components/Estrelas'
+import { Alert, Button, Card, Form } from 'react-bootstrap'
+import { useNavigate, useParams } from 'react-router-dom'
+import { api, mensagemDeErro } from '../api/client'
+import { Carregando } from '../components/Carregando'
 import { Erro } from '../components/Erro'
+import { formatarData } from '../formatos'
+import { useApi } from '../hooks/useApi'
 
-export default function Avaliar() {
+export function Avaliar() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [nota, setNota] = useState(5)
+  const reserva = useApi(`/agendamentos/${id}/`)
+  const [nota, setNota] = useState(0)
   const [comentario, setComentario] = useState('')
+  const [erro, setErro] = useState(null)
   const [enviando, setEnviando] = useState(false)
-  const [erroMsg, setErroMsg] = useState('')
 
-  const handleSubmit = async (e) => {
+  if (reserva.erro) return <Erro erro={reserva.erro} tentarDeNovo={reserva.recarregar} />
+  if (reserva.carregando) return <Carregando />
+
+  async function handleSubmit(e) {
     e.preventDefault()
+    setErro(null)
     setEnviando(true)
-    setErroMsg('')
 
     try {
-      await avaliarAgendamento(id, nota, comentario)
+      await api(`/agendamentos/${id}/avaliar/`, {
+        method: 'POST',
+        body: { nota, comentario },
+      })
       navigate(`/reservas/${id}`)
     } catch (err) {
-      setErroMsg(mensagemDeErro(err))
-    } finally {
+      setErro(mensagemDeErro(err))
       setEnviando(false)
     }
   }
 
   return (
-    <Card className="shadow-sm border-0 max-w-md mx-auto">
+    <Card className="shadow-sm border-0">
       <Card.Body className="p-4">
-        <h3 className="mb-2">Avaliar Reserva</h3>
-        <p className="text-muted small mb-4">Como foi sua experiência no laboratório?</p>
+        <h2 className="fw-bold mb-1">Avaliar Reserva</h2>
+        <p className="text-muted small mb-4">
+          {reserva.dados.servico_nome || 'Serviço'} com {reserva.dados.recurso_nome}, {formatarData(reserva.dados.inicio)}
+        </p>
 
-        {erroMsg && <Erro mensagem={erroMsg} />}
+        {erro && <Alert variant="danger">{erro}</Alert>}
 
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-4 text-center">
-            <Form.Label className="d-block fw-semibold mb-2">Sua Nota:</Form.Label>
-            <Estrelas nota={nota} onChange={setNota} />
+          <Form.Group className="mb-3" controlId="avaliacaoNota">
+            <Form.Label className="fw-medium d-block">Sua nota (1 a 5 estrelas)</Form.Label>
+            <div className="d-flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Button
+                  key={n}
+                  type="button"
+                  variant="link"
+                  className="p-1 text-warning fs-3 text-decoration-none shadow-none"
+                  onClick={() => setNota(n)}
+                >
+                  <i className={n <= nota ? 'bi bi-star-fill' : 'bi bi-star'}></i>
+                </Button>
+              ))}
+            </div>
           </Form.Group>
 
-          <Form.Group className="mb-4">
-            <Form.Label>Comentário (opcional)</Form.Label>
+          <Form.Group className="mb-4" controlId="avaliacaoComentario">
+            <Form.Label className="fw-medium">Comentário / Feedback</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
-              placeholder="Ex: Computadores rápidos e ambiente limpo."
+              placeholder="Descreva como foi o uso do laboratório ou do equipamento..."
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
             />
           </Form.Group>
 
           <div className="d-flex gap-2">
-            <Button variant="secondary" className="w-100" onClick={() => navigate(-1)} disabled={enviando}>
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={() => navigate(-1)}
+            >
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" className="w-100" disabled={enviando}>
+            <Button
+              type="submit"
+              variant="success"
+              disabled={nota === 0 || enviando}
+            >
               {enviando ? 'Enviando...' : 'Enviar Avaliação'}
             </Button>
           </div>
