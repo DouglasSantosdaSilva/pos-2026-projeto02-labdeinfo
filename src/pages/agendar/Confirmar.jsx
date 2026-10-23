@@ -1,84 +1,81 @@
-import React, { useState } from 'react'
-import { Form, Button } from 'react-bootstrap'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
-import { Confirmacao } from '../../components/Confirmacao'
+import { useState } from 'react'
+import { Alert, Button, Card, Description, Form, Label, TextArea, TextField } from '@heroui/react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { api, mensagemDeErro } from '../../api/client'
 import { Carregando } from '../../components/Carregando'
+import { Erro } from '../../components/Erro'
+import { formatarData, formatarHora, formatarPreco } from '../../formatos'
+import { useApi } from '../../hooks/useApi'
 
-export default function Confirmar() {
+export function Confirmar() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-
-  const servicoId = searchParams.get('servico')
-  const recursoId = searchParams.get('recurso')
-  const inicioParam = searchParams.get('inicio')
-  const dataParam = searchParams.get('data')
-
-  const { dados: servico, carregando: cServ } = useApi(servicoId ? `/servicos/${servicoId}/` : null)
-  const { dados: recurso, carregando: cRec } = useApi(recursoId ? `/recursos/${recursoId}/` : null)
-
+  const location = useLocation()
+  const [params] = useSearchParams()
+  const inicio = params.get('inicio')
+  const servico = useApi(`/servicos/${params.get('servico')}/`)
+  const recurso = useApi(`/recursos/${params.get('recurso')}/`)
   const [observacoes, setObservacoes] = useState('')
+  const [erro, setErro] = useState(null)
   const [enviando, setEnviando] = useState(false)
 
-  if (cServ || cRec) return <Carregando mensagem="Carregando dados da reserva..." />
+  if (servico.erro) return <Erro erro={servico.erro} tentarDeNovo={servico.recarregar} />
+  if (recurso.erro) return <Erro erro={recurso.erro} tentarDeNovo={recurso.recarregar} />
+  if (servico.carregando || recurso.carregando) return <Carregando />
 
-  const horaFormatada = inicioParam ? (inicioParam.includes('T') ? inicioParam.split('T')[1]?.substring(0, 5) : inicioParam) : '08:00'
+  const fim = new Date(new Date(inicio).getTime() + servico.dados.duracao_min * 60000)
 
-  const handleConfirmar = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault()
     setEnviando(true)
-
-    // Simula a resposta do servidor enviando para a tela final de sucesso (Enviado)
-    setTimeout(() => {
-      const respostaSimulada = {
-        id: Math.floor(Math.random() * 8000) + 1000,
-        servico: servico?.nome || 'Uso Livre de Computadores',
-        recurso: recurso?.nome || 'Laboratório de Informática 01',
-        data: dataParam || '2026-10-31',
-        horario: horaFormatada,
-        observacoes,
-        status: 'CONFIRMADA'
+    setErro(null)
+    try {
+      const agendamento = await api('/agendamentos/', {
+        method: 'POST',
+        body: { servico: servico.dados.id, recurso: recurso.dados.id, inicio, observacoes },
+      })
+      navigate('/agendar/enviado', { state: { agendamento } })
+    } catch (erro) {
+      // a vaga acabou ou já existe outra consulta no horário: volta para a escolha do horário
+      if (erro.dados?.inicio) {
+        navigate(location.state?.voltar ?? `/agendar/horario?servico=${servico.dados.id}&data=${inicio.slice(0, 10)}`, {
+          state: { erro: erro.dados.inicio.join(' ') },
+        })
+      } else {
+        setErro(mensagemDeErro(erro))
+        setEnviando(false)
       }
-
-      setEnviando(false)
-      navigate('/agendar/enviado', { state: { agendamento: respostaSimulada } })
-    }, 600)
+    }
   }
 
   return (
-    <div className="max-w-xl mx-auto">
-      <h2 className="mb-1">Passo 4: Confirmar Agendamento</h2>
-      <p className="text-muted mb-4">Revise os detalhes abaixo antes de enviar seu pedido.</p>
-
-      <Confirmacao
-        servico={servico}
-        recurso={recurso}
-        data={dataParam}
-        horario={horaFormatada}
-        observacoes={observacoes}
-      />
-
-      <Form onSubmit={handleConfirmar}>
-        <Form.Group className="mb-4">
-          <Form.Label className="fw-semibold">Observações (opcional):</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={3}
-            placeholder="Ex: Vou utilizar softwares de modelagem 3D ou ambiente Linux."
-            value={observacoes}
-            onChange={(e) => setObservacoes(e.target.value)}
-          />
-        </Form.Group>
-
-        <div className="d-flex gap-2">
-          <Button variant="secondary" className="w-100" onClick={() => navigate(-1)} disabled={enviando}>
-            Voltar
-          </Button>
-          <Button type="submit" variant="success" className="w-100" disabled={enviando}>
-            {enviando ? 'Enviando...' : 'Confirmar Reserva'}
-          </Button>
+    <>
+      <small className="text-gray-500">Passo 4 de 4</small>
+      <h2 className="mb-4">Confirmar agendamento</h2>
+      <Card>
+        <div className="divide-y divide-gray-200">
+          <div className="p-3"><strong>Serviço:</strong> {servico.dados.nome}</div>
+          <div className="p-3"><strong>Médico:</strong> {recurso.dados.nome}</div>
+          <div className="p-3"><strong>Dia:</strong> {formatarData(inicio)}</div>
+          <div className="p-3">
+            <strong>Horário:</strong> {formatarHora(inicio)} às {formatarHora(fim)} ({servico.dados.duracao_min} min)
+          </div>
+          <div className="p-3"><strong>Preço:</strong> {formatarPreco(servico.dados.preco)}</div>
         </div>
-      </Form>
-    </div>
+        <Card.Content>
+          {erro && <Alert status="danger">{erro}</Alert>}
+          <Form onSubmit={handleSubmit}>
+            <TextField name="observacoes" value={observacoes} onChange={setObservacoes} className="mb-3">
+              <Label>Observações</Label>
+              <TextArea rows={3} placeholder="Ex.: Dor de cabeça frequente há uma semana" />
+              <Description>Se a consulta for para um filho, informe o nome e a idade da criança.</Description>
+            </TextField>
+            <div className="flex gap-2">
+              <Button variant="ghost" onPress={() => navigate(-1)}>Voltar</Button>
+              <Button type="submit" variant="primary" isDisabled={enviando}>Confirmar</Button>
+            </div>
+          </Form>
+        </Card.Content>
+      </Card>
+    </>
   )
 }

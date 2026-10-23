@@ -1,52 +1,40 @@
 import React from 'react'
-import { Card, Button, Alert } from 'react-bootstrap'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { StatusReserva } from '../../components/StatusReserva'
-export default function Enviado() {
-  const navigate = useNavigate()
+import { Alert, Button, Card } from 'react-bootstrap'
+import { Link, Navigate, useLocation } from 'react-router-dom'
+import { ReservaItem } from '../../components/ReservaItem'
+
+export function Enviado() {
   const location = useLocation()
   const agendamento = location.state?.agendamento
 
   if (!agendamento) {
-    navigate('/')
-    return null
+    return <Navigate to="/reservas" replace />
   }
 
-  const { id, servico_nome, recurso_nome, inicio, fim, status } = agendamento
-
   return (
-    <div className="max-w-lg mx-auto py-4">
-      <Card className="shadow-sm border-0 text-center p-4">
-        <div className="display-4 text-success mb-3">✅</div>
-        <h3 className="fw-bold mb-2">Agendamento Enviado!</h3>
-        <p className="text-muted mb-4">Seu pedido foi registrado com sucesso.</p>
+    <Card className="text-center shadow-sm border-0">
+      <Card.Body className="p-4">
+        <i className="bi bi-check-circle-fill text-success display-3 d-block mb-3"></i>
+        
+        <h2 className="fw-bold mb-3">Reserva solicitada com sucesso!</h2>
 
-        <Alert variant="warning" className="text-start mb-4 small">
-          ℹ️ Sua reserva está com status <strong>solicitada</strong>. O coordenador do laboratório irá avaliar e confirmar seu horário em breve.
+        <div className="border rounded text-start mb-3 overflow-hidden">
+          <ReservaItem reserva={agendamento} />
+        </div>
+
+        <Alert variant="info" className="mb-4">
+          O administrador do laboratório irá analisar e confirmar a sua reserva em breve.
         </Alert>
 
-        <Card className="bg-light border-0 mb-4 text-start">
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h5 className="mb-0">{servico_nome}</h5>
-              <StatusReserva status={status} />
-            </div>
-            <p className="mb-1 text-muted">📍 {recurso_nome}</p>
-            <p className="mb-0 small text-secondary">
-              📅 {new Date(inicio).toLocaleDateString('pt-BR')} das {new Date(inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} às {new Date(fim).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </Card.Body>
-        </Card>
-
-        <div className="d-flex gap-2">
-          <Button variant="outline-primary" className="w-100" onClick={() => navigate('/')}>
-            Início
+        <div className="d-flex justify-content-center gap-2">
+          <Button as={Link} to={`/reservas/${agendamento.id}`} variant="success">
+            Ver detalhes da reserva
           </Button>
-          <Button variant="primary" className="w-100" onClick={() => navigate(`/reservas/${id}`)}>
-            Ver Reserva
+          <Button as={Link} to="/inicio" variant="outline-secondary">
+            Ir para o início
           </Button>
         </div>
-      </Card>
-    </div>
+      </Card.Body>
+    </Card>
   )
 }

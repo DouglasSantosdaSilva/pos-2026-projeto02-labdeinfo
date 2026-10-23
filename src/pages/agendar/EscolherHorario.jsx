@@ -1,109 +1,92 @@
-import React, { useState } from 'react'
-import { Card, Button, Row, Col, Badge } from 'react-bootstrap'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
-import { SeletorData } from '../../components/SeletorData'
+import React from 'react'
+import { Alert, Button, Card } from 'react-bootstrap'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
+import { Foto } from '../../components/Foto'
+import { SeletorData } from '../../components/SeletorData'
+import { formatarHora, hoje, somarDias } from '../../formatos'
+import { useApi } from '../../hooks/useApi'
 
-export default function EscolherHorario() {
+export function EscolherHorario() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const servicoId = searchParams.get('servico')
-  const recursoId = searchParams.get('recurso')
+  const location = useLocation()
+  const [params, setParams] = useSearchParams()
+  const servico = params.get('servico')
+  const recurso = params.get('recurso')
+  const data = params.get('data') ?? hoje()
 
-  const hoje = new Date().toISOString().split('T')[0]
-  const [data, setData] = useState(hoje)
+  let caminho = `/horarios-livres/?servico=${servico}&data=${data}`
+  if (recurso) {
+    caminho += `&recurso=${recurso}`
+  }
+  const { dados, erro, carregando, recarregar } = useApi(caminho)
 
-  let url = `/horarios-livres/?servico=${servicoId}&data=${data}`
-  if (recursoId) url += `&recurso=${recursoId}`
-
-  const { dados, carregando, erro, recarregar } = useApi(servicoId ? url : null)
-
-  if (!servicoId) {
-    navigate('/agendar')
-    return null
+  function mudarData(novaData) {
+    const novos = new URLSearchParams(params)
+    novos.set('data', novaData)
+    setParams(novos, { replace: true })
   }
 
-  const horariosPorRecurso = Array.isArray(dados) 
-  ? dados 
-  : (dados?.results || [])
-
-  // Regra da Seção 6: O app filtra e mostra apenas os horários de hora cheia (:00)
-  const filtrarHoraCheia = (horarios) => {
-    if (!Array.isArray(horarios)) return []
-    return horarios.filter((item) => {
-      const horaInicio = item.inicio || item
-      return horaInicio.endsWith(':00') || horaInicio.endsWith(':00:00')
+  function escolher(recursoId, inicio) {
+    const escolha = new URLSearchParams({ servico, recurso: recursoId, inicio })
+    navigate(`/agendar/confirmar?${escolha}`, {
+      state: { voltar: location.pathname + location.search },
     })
   }
 
-  const selecionarHorario = (labId, horaInicio) => {
-    let proximaUrl = `/agendar/confirmar?servico=${servicoId}&data=${data}&inicio=${data}T${horaInicio}`
-    if (labId) proximaUrl += `&recurso=${labId}`
-    navigate(proximaUrl)
-  }
+  const comHorarios = dados ? dados.filter((item) => item.horarios.length > 0) : []
 
   return (
-    <div>
-      <h2 className="mb-1">Passo 3: Escolher Data e Horário</h2>
-      <p className="text-muted mb-4">Selecione o dia e um horário livre de hora cheia para sua reserva.</p>
+    <>
+      <small className="text-muted d-block mb-1">Passo 3 de 4</small>
+      <h2 className="fw-bold mb-4">Escolha o Horário</h2>
 
-      <Row className="mb-4">
-        <Col md={4}>
-          <SeletorData data={data} onChange={setData} label="Data da Reserva" />
-        </Col>
-      </Row>
-
-      {carregando && <Carregando mensagem="Buscando horários livres..." />}
-      {erro && <Erro mensagem="Não foi possível buscar os horários livres." onTentarDeNovo={recarregar} />}
-
-      {!carregando && !erro && horariosPorRecurso.length === 0 ? (
-        <Card className="p-4 text-center border-0 shadow-sm">
-          <p className="text-muted mb-0">
-            Sem horários livres neste dia. Tente escolher outra data no seletor acima.
-          </p>
-        </Card>
-      ) : (
-        !carregando &&
-        !erro && (
-          <div className="d-flex flex-column gap-4">
-            {horariosPorRecurso.map((item, idx) => {
-              const labNome = item.recurso_nome || 'Laboratório'
-              const labId = item.recurso || recursoId
-              const horasCheias = filtrarHoraCheia(item.horarios || [])
-
-              return (
-                <Card key={idx} className="shadow-sm border-0">
-                  <Card.Header className="bg-white py-3 fw-bold border-bottom">
-                    📍 {labNome}
-                  </Card.Header>
-                  <Card.Body>
-                    {horasCheias.length === 0 ? (
-                      <span className="text-muted small">Sem horários de hora cheia para esta data.</span>
-                    ) : (
-                      <div className="d-flex flex-wrap gap-2">
-                        {horasCheias.map((h, hIdx) => {
-                          const horaFormatada = typeof h === 'string' ? h.substring(0, 5) : h.inicio.substring(0, 5)
-                          return (
-                            <Button
-                              key={hIdx}
-                              variant="outline-primary"
-                              onClick={() => selecionarHorario(labId, horaFormatada)}
-                            >
-                              🕒 {horaFormatada}
-                            </Button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </Card.Body>
-                </Card>
-              )
-            })}
-          </div>
-        )
+      {location.state?.erro && (
+        <Alert variant="warning" className="mb-3">
+          {location.state.erro}
+        </Alert>
       )}
-    </div>
+
+      <div className="mb-3">
+        <SeletorData data={data} onChange={mudarData} min={hoje()} />
+      </div>
+
+      {erro && <Erro erro={erro} tentarDeNovo={recarregar} />}
+      {carregando && <Carregando />}
+
+      {dados && comHorarios.length === 0 && (
+        <Alert variant="info" className="d-flex align-items-center justify-content-between flex-wrap gap-2 my-3">
+          <span>Sem horários livres neste dia.</span>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={() => mudarData(somarDias(data, 1))}
+          >
+            Ver o dia seguinte
+          </Button>
+        </Alert>
+      )}
+
+      {comHorarios.map((item) => (
+        <Card key={item.recurso.id} className="mb-3 shadow-sm border-0">
+          <Card.Header className="bg-white d-flex align-items-center gap-2 py-3 border-0">
+            <Foto src={item.recurso.foto} tamanho={32} />
+            <span className="fw-bold">{item.recurso.nome}</span>
+          </Card.Header>
+          <Card.Body className="pt-0 d-flex flex-wrap gap-2">
+            {item.horarios.map((horario) => (
+              <Button
+                key={horario}
+                variant="outline-primary"
+                onClick={() => escolher(item.recurso.id, horario)}
+              >
+                {formatarHora(horario)}
+              </Button>
+            ))}
+          </Card.Body>
+        </Card>
+      ))}
+    </>
   )
 }
