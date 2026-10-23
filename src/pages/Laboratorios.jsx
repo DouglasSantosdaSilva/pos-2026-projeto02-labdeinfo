@@ -44,3 +44,5 @@ export function Laboratorios() {
     </>
   )
 }
+
+export default Laboratorios

@@ -9,21 +9,25 @@ import { useApi } from '../../hooks/useApi'
 
 const NOVO = { nome: '', bio: '', foto: null, capacidade: 1, ativo: true }
 
-export function NovoRecurso() {
-  return <FormRecurso recurso={NOVO} />
+export function NovoLaboratorio() {
+  return <FormLaboratorio recurso={NOVO} />
 }
 
-export function EditarRecurso() {
+export function EditarLaboratorio() {
   const { id } = useParams()
   const { dados, erro, carregando, recarregar } = useApi(`/recursos/${id}/`)
 
   if (erro) return <Erro erro={erro} tentarDeNovo={recarregar} />
   if (carregando) return <Carregando />
 
-  return <FormRecurso recurso={dados} />
+  return <FormLaboratorio recurso={dados} />
 }
 
-function FormRecurso({ recurso }) {
+// Aliases para manter compatibilidade com imports legados
+export const NovoRecurso = NovoLaboratorio
+export const EditarRecurso = EditarLaboratorio
+
+function FormLaboratorio({ recurso }) {
   const navigate = useNavigate()
   const [nome, setNome] = useState(recurso.nome || '')
   const [bio, setBio] = useState(recurso.bio || '')
@@ -54,7 +58,7 @@ function FormRecurso({ recurso }) {
       } else {
         await api('/recursos/', { method: 'POST', body: formulario })
       }
-      navigate('/admin/laboratorios')
+      navigate('/admin/recursos')
     } catch (err) {
       setErro(mensagemDeErro(err))
       setErros(err.dados ?? {})
@@ -80,7 +84,7 @@ function FormRecurso({ recurso }) {
           {recurso.id && (
             <Button
               as={Link}
-              to={`/admin/laboratorios/${recurso.id}/horarios`}
+              to={`/admin/recursos/${recurso.id}/horarios`}
               variant="outline-secondary"
             >
               <i className="bi bi-clock me-1"></i> Horários
@@ -174,7 +178,7 @@ function FormRecurso({ recurso }) {
             <Button
               type="button"
               variant="outline-secondary"
-              onClick={() => navigate('/admin/laboratorios')}
+              onClick={() => navigate('/admin/recursos')}
             >
               Voltar
             </Button>

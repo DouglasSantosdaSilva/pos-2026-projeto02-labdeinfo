@@ -31,9 +31,9 @@ import { AConfirmar } from './pages/admin/AConfirmar'
 import { Agenda } from './pages/admin/Agenda'
 import { Avaliacoes } from './pages/admin/Avaliacoes'
 import { Horarios } from './pages/admin/Horarios'
+import { EditarLaboratorio, NovoLaboratorio } from './pages/admin/Laboratorio'
+import { Laboratorios as AdminLaboratorios}  from './pages/admin/Laboratorios'
 import { Negocio } from './pages/admin/Negocio'
-import { EditarRecurso, NovoRecurso } from './pages/admin/Recurso'
-import { Recursos as AdminRecursos } from './pages/admin/Recursos'
 import { EditarServico, NovoServico } from './pages/admin/Servico'
 import { Servicos } from './pages/admin/Servicos'
 
@@ -66,7 +66,7 @@ export function App() {
             <Route path="/reservas/:id" element={<Reserva />} />
             <Route path="/reservas/:id/avaliar" element={<Avaliar />} />
 
-            {/* Consulta de Laboratórios/Recursos e Perfil */}
+            {/* Consulta de Laboratórios e Perfil */}
             <Route path="/laboratorios" element={<Laboratorios />} />
             <Route path="/laboratorios/:id" element={<Laboratorio />} />
             <Route path="/perfil" element={<Perfil />} />
@@ -76,9 +76,9 @@ export function App() {
             <Route path="/admin/agenda" element={<Agenda />} />
             <Route path="/admin/confirmar" element={<AConfirmar />} />
             <Route path="/admin/negocio" element={<Negocio />} />
-            <Route path="/admin/recursos" element={<AdminRecursos />} />
-            <Route path="/admin/recursos/novo" element={<NovoRecurso />} />
-            <Route path="/admin/recursos/:id" element={<EditarRecurso />} />
+            <Route path="/admin/recursos" element={<AdminLaboratorios />} />
+            <Route path="/admin/recursos/novo" element={<NovoLaboratorio />} />
+            <Route path="/admin/recursos/:id" element={<EditarLaboratorio />} />
             <Route path="/admin/recursos/:id/horarios" element={<Horarios />} />
             <Route path="/admin/servicos" element={<Servicos />} />
             <Route path="/admin/servicos/novo" element={<NovoServico />} />

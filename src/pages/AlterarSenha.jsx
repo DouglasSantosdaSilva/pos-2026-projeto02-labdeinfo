@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Alert, Button, Card, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { api, mensagemDeErro } from '../../api/client'
+import { api, mensagemDeErro } from '../api/client'
 
 export function AlterarSenha() {
   const navigate = useNavigate()
