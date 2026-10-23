@@ -1,113 +1,106 @@
 import React, { useState } from 'react'
-import { Card, Button, Badge } from 'react-bootstrap'
-import { useApi } from '../../hooks/useApi'
-import { confirmarAgendamento, cancelarAgendamento, mensagemDeErro } from '../../services/api'
+import { Alert, Button, Card, ListGroup } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import { api, mensagemDeErro } from '../../api/client'
 import { Carregando } from '../../components/Carregando'
+import { CarregarMais } from '../../components/CarregarMais'
+import { ConfirmarAcao } from '../../components/ConfirmarAcao'
 import { Erro } from '../../components/Erro'
-import { ConfirmarAcao } from "../../components/ConfirmarAcao"
+import { formatarData, formatarHora } from '../../formatos'
+import { usePaginado } from '../../hooks/useApi'
 
-export default function AConfirmar() {
-  const { dados, carregando, erro, recarregar } = useApi('/agendamentos/?status=solicitado')
-  const [processandoId, setProcessandoId] = useState(null)
-  const [modalCancelar, setModalCancelar] = useState({ aberto: false, id: null })
-  const [erroAcao, setErroAcao] = useState('')
+export function AConfirmar() {
+  const pedidos = usePaginado('/agendamentos/?status=solicitado')
+  const [pendente, setPendente] = useState(null)
+  const [erroAcao, setErroAcao] = useState(null)
 
-  if (carregando) return <Carregando mensagem="Buscando pedidos a confirmar..." />
-  if (erro) return <Erro mensagem="Não foi possível carregar os pedidos." onTentarDeNovo={recarregar} />
-
-  const solicitacoes = dados?.results || dados || []
-
-  const handleConfirmar = async (id) => {
-    setProcessandoId(id)
-    setErroAcao('')
+  async function executar(id, acao) {
+    setErroAcao(null)
     try {
-      await confirmarAgendamento(id)
-      recarregar()
-    } catch (err) {
-      setErroAcao(mensagemDeErro(err))
-    } finally {
-      setProcessandoId(null)
+      await api(`/agendamentos/${id}/${acao}/`, { method: 'POST' })
+      pedidos.recarregar()
+    } catch (erro) {
+      setErroAcao(mensagemDeErro(erro))
     }
   }
 
-  const handleCancelar = async () => {
-    if (!modalCancelar.id) return
-    setProcessandoId(modalCancelar.id)
-    setErroAcao('')
-    try {
-      await cancelarAgendamento(modalCancelar.id)
-      setModalCancelar({ aberto: false, id: null })
-      recarregar()
-    } catch (err) {
-      setErroAcao(mensagemDeErro(err))
-    } finally {
-      setProcessandoId(null)
-    }
+  function confirmarAcao() {
+    executar(pendente.id, pendente.acao)
+    setPendente(null)
   }
+
+  if (pedidos.erro) return <Erro erro={pedidos.erro} tentarDeNovo={pedidos.recarregar} />
 
   return (
-    <div>
-      <h2 className="mb-4">Agendamentos A Confirmar</h2>
+    <>
+      <h2 className="fw-bold mb-4">Reservas a Confirmar</h2>
 
-      {erroAcao && <erro mensagem={erroAcao} />}
+      {erroAcao && <Alert variant="danger">{erroAcao}</Alert>}
 
-      {solicitacoes.length === 0 ? (
-        <p className="text-muted">Nenhum pedido para confirmar.</p>
-      ) : (
-        <div className="d-flex flex-column gap-3">
-          {solicitacoes.map((item) => (
-            <Card key={item.id} className="shadow-sm border-0">
-              <Card.Body className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <div>
-                  <div className="d-flex align-items-center gap-2 mb-1">
-                    <h5 className="mb-0">{item.servico_nome}</h5>
-                    <Badge bg="warning" text="dark">Solicitado</Badge>
-                  </div>
-                  <p className="mb-1 text-muted">
-                    📍 <strong>{item.recurso_nome}</strong> · 👤 <strong>{item.cliente_nome}</strong>
-                  </p>
-                  <p className="mb-0 small text-secondary">
-                    📅 {new Date(item.inicio).toLocaleDateString('pt-BR')} das {new Date(item.inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} às {new Date(item.fim).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                  {item.observacoes && (
-                    <small className="d-block mt-2 text-dark bg-light p-2 rounded">
-                      <strong>Obs:</strong> {item.observacoes}
-                    </small>
-                  )}
-                </div>
-
-                <div className="d-flex gap-2 align-self-end align-self-md-center">
-                  <Button
-                    variant="success"
-                    size="sm"
-                    disabled={processandoId === item.id}
-                    onClick={() => handleConfirmar(item.id)}
-                  >
-                    Confirmar
-                  </Button>
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    disabled={processandoId === item.id}
-                    onClick={() => setModalCancelar({ aberto: true, id: item.id })}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
-          ))}
-        </div>
+      {!pedidos.carregando && pedidos.itens.length === 0 && (
+        <Alert variant="success">Nenhuma reserva pendente para confirmação.</Alert>
       )}
 
-      <confirmar_acao
-        show={modalCancelar.aberto}
-        onHide={() => setModalCancelar({ aberto: false, id: null })}
-        onConfirm={handleCancelar}
-        titulo="Cancelar Agendamento"
-        mensagem="Tem certeza de que deseja rejeitar/cancelar este agendamento?"
-        carregando={processandoId === modalCancelar.id}
+      {pedidos.itens.length > 0 && (
+        <Card className="shadow-sm border-0 mb-3">
+          <ListGroup variant="flush">
+            {pedidos.itens.map((reserva) => (
+              <ListGroup.Item key={reserva.id} className="p-3">
+                <div className="d-flex flex-wrap align-items-center gap-3">
+                  <div className="text-center">
+                    <div className="fw-bold">{formatarHora(reserva.inicio)}</div>
+                    <small className="text-muted">{formatarData(reserva.inicio)}</small>
+                  </div>
+
+                  <div className="me-auto">
+                    <Link
+                      to={`/reservas/${reserva.id}`}
+                      className="fw-semibold text-decoration-none text-dark d-block"
+                    >
+                      {reserva.servico_nome}
+                    </Link>
+                    <div>
+                      <small className="text-muted">
+                        {reserva.recurso_nome} · {reserva.cliente_nome}
+                      </small>
+                    </div>
+                    {reserva.observacoes && (
+                      <div>
+                        <small className="fst-italic text-secondary">{reserva.observacoes}</small>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setPendente({ id: reserva.id, acao: 'confirmar' })}
+                    >
+                      <i className="bi bi-check-lg me-1"></i> Confirmar
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => setPendente({ id: reserva.id, acao: 'cancelar' })}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card>
+      )}
+
+      {pedidos.carregando ? <Carregando /> : <CarregarMais lista={pedidos} />}
+
+      <ConfirmarAcao
+        acao={pendente?.acao ?? null}
+        onConfirmar={confirmarAcao}
+        onFechar={() => setPendente(null)}
       />
-    </div>
+    </>
   )
 }

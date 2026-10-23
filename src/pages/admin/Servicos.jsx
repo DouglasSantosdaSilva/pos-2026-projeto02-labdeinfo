@@ -1,72 +1,81 @@
 import React, { useState } from 'react'
-import { Card, Button, Row, Col, Badge } from 'react-bootstrap'
-import { useNavigate } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
-import { FiltroAtivo } from '../../components/FiltroAtivo'
+import { Alert, Badge, Button, Card, ListGroup } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import { Carregando } from '../../components/Carregando'
+import { CarregarMais } from '../../components/CarregarMais'
 import { Erro } from '../../components/Erro'
-import { Foto } from '../../components/Foto'
+import { FiltroAtivo } from '../../components/FiltroAtivo'
+import { formatarPreco } from '../../formatos'
+import { usePaginado } from '../../hooks/useApi'
 
-export default function Servicos() {
-  const navigate = useNavigate()
-  const [filtro, setFiltro] = useState('true')
-
-  const { dados, carregando, erro, recarregar } = useApi(`/servicos/${filtro ? `?ativo=${filtro}` : ''}`)
-
-
-  if (carregando) return <Carregando mensagem="Carregando serviços..." />
-  if (erro) return <Erro mensagem="Erro ao carregar serviços." onTentarDeNovo={recarregar} />
-
-
-  const lista = dados?.results || dados || []
+export function Servicos() {
+  const [ativo, setAtivo] = useState('')
+  const servicos = usePaginado(ativo ? `/servicos/?ativo=${ativo}` : '/servicos/')
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestão de Serviços</h2>
-        <Button variant="primary" onClick={() => navigate('/admin/servicos/novo')}>
-          + Novo Serviço
+    <>
+      <div className="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <h2 className="fw-bold mb-0 me-auto">Serviços e Softwares</h2>
+        <FiltroAtivo valor={ativo} onChange={setAtivo} />
+        <Button as={Link} to="/admin/servicos/novo" variant="primary">
+          <i className="bi bi-plus-lg me-1"></i> Novo serviço
         </Button>
       </div>
 
-      <FiltroAtivo valor={filtro} onChange={setFiltro} />
+      {servicos.erro && <Erro erro={servicos.erro} tentarDeNovo={servicos.recarregar} />}
 
-      {lista.length === 0 ? (
-        <p className="text-muted">Cadastre o primeiro serviço.</p>
-      ) : (
-        <Row className="g-4 mt-1">
-          {lista.map((s) => (
-            <Col md={6} lg={4} key={s.id}>
-              <Card className="shadow-sm border-0 h-100">
-                <Card.Body className="d-flex flex-column">
-                  <div className="d-flex align-items-center gap-3 mb-3">
-                    <Foto src={s.imagem} alt={s.nome} tamanho={60} arredondado={false} />
-                    <div>
-                      <h5 className="mb-1">{s.nome}</h5>
-                      <Badge bg={s.ativo ? 'success' : 'secondary'}>
-                        {s.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <p className="text-muted small mb-2">{s.descricao || 'Sem descrição.'}</p>
-                  <p className="mb-1"><strong>Duração:</strong> {s.duracao_minutos} min</p>
-                  <p className="fw-semibold text-success mb-3">
-                    {s.preco ? `R$ ${s.preco}` : 'Gratuito (R$ 0,00)'}
-                  </p>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    className="mt-auto w-100"
-                    onClick={() => navigate(`/admin/servicos/${s.id}`)}
-                  >
-                    Editar
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+      {!servicos.carregando && !servicos.erro && servicos.itens.length === 0 && (
+        <Alert variant="info">Cadastre o primeiro serviço ou software.</Alert>
       )}
-    </div>
+
+      {servicos.itens.length > 0 && (
+        <Card className="shadow-sm border-0 mb-3">
+          <ListGroup variant="flush">
+            {servicos.itens.map((servico) => (
+              <ListGroup.Item
+                key={servico.id}
+                action
+                as={Link}
+                to={`/admin/servicos/${servico.id}`}
+                className="d-flex align-items-center gap-3 p-3 text-decoration-none"
+              >
+                {servico.imagem ? (
+                  <img
+                    src={servico.imagem}
+                    alt={servico.nome}
+                    style={{ width: '64px', height: '64px', objectFit: 'cover' }}
+                    className="rounded"
+                  />
+                ) : (
+                  <div
+                    className="d-flex align-items-center justify-content-center bg-light rounded"
+                    style={{ width: '64px', height: '64px' }}
+                  >
+                    <i className="bi bi-pc-display fs-3 text-secondary"></i>
+                  </div>
+                )}
+                <div className="me-auto">
+                  <div className="fw-semibold text-dark">{servico.nome}</div>
+                  <small className="text-muted">
+                    {servico.duracao_min} min · {formatarPreco(servico.preco)}
+                  </small>
+                </div>
+                {servico.ativo ? (
+                  <Badge bg="success" className="px-2 py-1">
+                    Ativo
+                  </Badge>
+                ) : (
+                  <Badge bg="secondary" className="px-2 py-1">
+                    Inativo
+                  </Badge>
+                )}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card>
+      )}
+
+      {servicos.carregando ? <Carregando /> : <CarregarMais lista={servicos} />}
+    </>
   )
 }

@@ -1,180 +1,224 @@
-import React, { useState, useEffect } from 'react'
-import { Form, Button, Card } from 'react-bootstrap'
+import React, { useState } from 'react'
+import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
-import { criarServico, atualizarServico, mensagemDeErro } from '../../services/api'
+import { api, buscarTodas, mensagemDeErro } from '../../api/client'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
-import { Foto } from '../../components/Foto'
+import { useApi } from '../../hooks/useApi'
 
-export default function FormServico() {
+const NOVO = { nome: '', descricao: '', duracao_min: 50, preco: '0.00', imagem: null, recursos: [], ativo: true }
+
+export function NovoServico() {
+  const recursos = useApi('/recursos/', buscarTodas)
+
+  if (recursos.erro) return <Erro erro={recursos.erro} tentarDeNovo={recursos.recarregar} />
+  if (recursos.carregando) return <Carregando />
+
+  return <FormServico servico={NOVO} recursos={recursos.dados} />
+}
+
+export function EditarServico() {
   const { id } = useParams()
-  const isEdicao = Boolean(id)
+  const servico = useApi(`/servicos/${id}/`)
+  const recursos = useApi('/recursos/', buscarTodas)
+
+  if (servico.erro) return <Erro erro={servico.erro} tentarDeNovo={servico.recarregar} />
+  if (recursos.erro) return <Erro erro={recursos.erro} tentarDeNovo={recursos.recarregar} />
+  if (servico.carregando || recursos.carregando) return <Carregando />
+
+  return <FormServico servico={servico.dados} recursos={recursos.dados} />
+}
+
+function FormServico({ servico, recursos }) {
   const navigate = useNavigate()
+  const [nome, setNome] = useState(servico.nome || '')
+  const [descricao, setDescricao] = useState(servico.descricao || '')
+  const [duracao, setDuracao] = useState(servico.duracao_min ?? 50)
+  const [preco, setPreco] = useState(servico.preco ?? '0.00')
+  const [escolhidos, setEscolhidos] = useState(servico.recursos || [])
+  const [ativo, setAtivo] = useState(servico.ativo ?? true)
+  const [imagem, setImagem] = useState(servico.imagem || null)
+  const [arquivo, setArquivo] = useState(null)
+  const [erro, setErro] = useState(null)
+  const [erros, setErros] = useState({})
 
-  const { dados, carregando, erro } = useApi(isEdicao ? `/servicos/${id}/` : null)
-  const { dados: resLabs } = useApi('/recursos/')
-
-  const [nome, setNome] = useState('')
-  const [descricao, setDescricao] = useState('')
-  const [duracaoMinutos, setDuracaoMinutos] = useState(60)
-  const [preco, setPreco] = useState('0.00')
-  const [ativo, setAtivo] = useState(true)
-  const [recursosSelecionados, setRecursosSelecionados] = useState([])
-  const [imagem, setImagem] = useState(null)
-  const [preview, setPreview] = useState(null)
-  const [salvando, setSalvando] = useState(false)
-  const [erroForm, setErroForm] = useState('')
-
-  useEffect(() => {
-    if (dados && isEdicao) {
-      setNome(dados.nome || '')
-      setDescricao(dados.descricao || '')
-      setDuracaoMinutos(dados.duracao_minutos || 60)
-      setPreco(dados.preco || '0.00')
-      setAtivo(dados.ativo ?? true)
-      setRecursosSelecionados(dados.recursos || [])
-      setPreview(dados.imagem || null)
-    }
-  }, [dados, isEdicao])
-
-  if (isEdicao && carregando) return <Carregando mensagem="Carregando serviço..." />
-  if (isEdicao && erro) return <Erro mensagem="Não foi possível carregar o serviço." />
-
-  const laboratorios = resLabs?.results || resLabs || []
-
-  const handleImagemChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setImagem(file)
-      setPreview(URL.createObjectURL(file))
-    }
-  }
-
-  const handleRecursoToggle = (labId) => {
-    if (recursosSelecionados.includes(labId)) {
-      setRecursosSelecionados(recursosSelecionados.filter((r) => r !== labId))
+  function marcar(id, marcado) {
+    if (marcado) {
+      setEscolhidos([...escolhidos, id])
     } else {
-      setRecursosSelecionados([...recursosSelecionados, labId])
+      setEscolhidos(escolhidos.filter((r) => r !== id))
     }
   }
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setSalvando(true)
-    setErroForm('')
-
-    const formData = new FormData()
-    formData.append('nome', nome)
-    formData.append('descricao', descricao)
-    formData.append('duracao_minutos', duracaoMinutos)
-    formData.append('preco', preco)
-    formData.append('ativo', ativo)
-    recursosSelecionados.forEach((rId) => formData.append('recursos', rId))
-    if (imagem) formData.append('imagem', imagem)
+    setErro(null)
+    setErros({})
+    const corpo = { nome, descricao, duracao_min: duracao, preco, recursos: escolhidos, ativo }
 
     try {
-      if (isEdicao) {
-        await atualizarServico(id, formData)
-      } else {
-        await criarServico(formData)
+      const salvo = servico.id
+        ? await api(`/servicos/${servico.id}/`, { method: 'PATCH', body: corpo })
+        : await api('/servicos/', { method: 'POST', body: corpo })
+
+      if (arquivo) {
+        const formulario = new FormData()
+        formulario.append('imagem', arquivo)
+        await api(`/servicos/${salvo.id}/`, { method: 'PATCH', body: formulario })
       }
       navigate('/admin/servicos')
     } catch (err) {
-      setErroForm(mensagemDeErro(err))
-    } finally {
-      setSalvando(false)
+      setErro(mensagemDeErro(err))
+      setErros(err.dados ?? {})
+    }
+  }
+
+  async function removerImagem() {
+    try {
+      await api(`/servicos/${servico.id}/`, { method: 'PATCH', body: { imagem: null } })
+      setImagem(null)
+    } catch (err) {
+      setErro(mensagemDeErro(err))
     }
   }
 
   return (
-    <Card className="shadow-sm border-0 max-w-xl mx-auto">
+    <Card className="shadow-sm border-0">
       <Card.Body className="p-4">
-        <h3 className="mb-4">{isEdicao ? 'Editar Serviço' : 'Novo Serviço'}</h3>
+        <h2 className="fw-bold mb-4">{servico.id ? 'Editar Serviço / Software' : 'Novo Serviço / Software'}</h2>
 
-        {erroForm && <Erro mensagem={erroForm} />}
+        {erro && <Alert variant="danger">{erro}</Alert>}
 
         <Form onSubmit={handleSubmit}>
-          <div className="text-center mb-4">
-            <Foto src={preview} alt={nome} tamanho={100} arredondado={false} className="mb-2 shadow-sm rounded" />
-            <div>
-              <Form.Group controlId="imagemServico">
-                <Form.Label className="btn btn-outline-primary size-sm cursor-pointer mb-0">
-                  Imagem do Serviço
-                </Form.Label>
-                <Form.Control type="file" accept="image/*" onChange={handleImagemChange} className="d-none" />
-              </Form.Group>
-            </div>
-          </div>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Nome do Serviço</Form.Label>
+          <Form.Group className="mb-3" controlId="nomeServico">
+            <Form.Label className="fw-medium">Nome</Form.Label>
             <Form.Control
               type="text"
-              placeholder="Ex: Uso por 1 hora"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
+              isInvalid={!!erros.nome}
               required
             />
+            <Form.Control.Feedback type="invalid">
+              {erros.nome?.join(' ')}
+            </Form.Control.Feedback>
           </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Duração em Minutos</Form.Label>
+          <Form.Group className="mb-3" controlId="descricaoServico">
+            <Form.Label className="fw-medium">Descrição</Form.Label>
             <Form.Control
-              type="number"
-              value={duracaoMinutos}
-              onChange={(e) => setDuracaoMinutos(e.target.value)}
-              required
+              as="textarea"
+              rows={2}
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              isInvalid={!!erros.descricao}
             />
+            <Form.Control.Feedback type="invalid">
+              {erros.descricao?.join(' ')}
+            </Form.Control.Feedback>
           </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Preço (R$)</Form.Label>
-            <Form.Control
-              type="number"
-              step="0.01"
-              value={preco}
-              onChange={(e) => setPreco(e.target.value)}
-              required
-            />
-          </Form.Group>
+          <Row className="mb-3 g-3">
+            <Col md={6}>
+              <Form.Group controlId="duracaoServico">
+                <Form.Label className="fw-medium">Duração (minutos)</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={duracao}
+                  onChange={(e) => setDuracao(Number(e.target.value))}
+                  isInvalid={!!erros.duracao_min}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {erros.duracao_min?.join(' ')}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </Col>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Laboratórios que oferecem este serviço:</Form.Label>
-            <div className="border rounded p-3 bg-light">
-              {laboratorios.length === 0 ? (
-                <p className="text-muted small mb-0">Nenhum laboratório cadastrado.</p>
-              ) : (
-                laboratorios.map((lab) => (
-                  <Form.Check
-                    key={lab.id}
-                    type="checkbox"
-                    id={`lab-${lab.id}`}
-                    label={lab.nome}
-                    checked={recursosSelecionados.includes(lab.id)}
-                    onChange={() => handleRecursoToggle(lab.id)}
-                  />
-                ))
-              )}
+            <Col md={6}>
+              <Form.Group controlId="precoServico">
+                <Form.Label className="fw-medium">Custo / Taxa (R$)</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.01"
+                  value={preco}
+                  onChange={(e) => setPreco(e.target.value)}
+                  isInvalid={!!erros.preco}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {erros.preco?.join(' ')}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Form.Group className="mb-3" controlId="laboratoriosServico">
+            <Form.Label className="fw-medium d-block">Laboratórios que disponibilizam</Form.Label>
+            <div className="d-flex flex-column gap-2 p-3 bg-light rounded border">
+              {recursos.map((recurso) => (
+                <Form.Check
+                  key={recurso.id}
+                  type="checkbox"
+                  id={`recurso-${recurso.id}`}
+                  label={recurso.ativo ? recurso.nome : `${recurso.nome} (inativo)`}
+                  checked={escolhidos.includes(recurso.id)}
+                  onChange={(e) => marcar(recurso.id, e.target.checked)}
+                  isInvalid={!!erros.recursos}
+                />
+              ))}
             </div>
+            {erros.recursos && <div className="text-danger small mt-1">{erros.recursos.join(' ')}</div>}
           </Form.Group>
 
-          <Form.Group className="mb-4">
+          <Form.Group className="mb-3" controlId="imagemServico">
+            <Form.Label className="fw-medium">Imagem</Form.Label>
+            {imagem && (
+              <div className="d-flex align-items-center gap-3 mb-2">
+                <img
+                  src={imagem}
+                  alt="Serviço"
+                  style={{ width: '160px' }}
+                  className="rounded border p-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={removerImagem}
+                >
+                  Remover imagem
+                </Button>
+              </div>
+            )}
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={(e) => setArquivo(e.target.files[0])}
+              isInvalid={!!erros.imagem}
+            />
+            <Form.Control.Feedback type="invalid">
+              {erros.imagem?.join(' ')}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <Form.Group className="mb-4" controlId="ativoServico">
             <Form.Check
               type="switch"
-              id="ativo-servico-switch"
-              label="Serviço Ativo"
+              label="Ativo (inativos não aparecem para os alunos/usuários)"
               checked={ativo}
               onChange={(e) => setAtivo(e.target.checked)}
             />
           </Form.Group>
 
           <div className="d-flex gap-2">
-            <Button variant="secondary" className="w-100" onClick={() => navigate('/admin/servicos')}>
-              Cancelar
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={() => navigate('/admin/servicos')}
+            >
+              Voltar
             </Button>
-            <Button type="submit" variant="primary" className="w-100" disabled={salvando}>
-              {salvando ? 'Salvando...' : 'Salvar'}
+            <Button type="submit" variant="primary">
+              Salvar
             </Button>
           </div>
         </Form>

@@ -1,106 +1,130 @@
-import React, { useState, useEffect } from 'react'
-import { Form, Button, Card, Row, Col } from 'react-bootstrap'
-import { useApi } from '../../hooks/useApi'
-import { atualizarOrganizacao, mensagemDeErro } from '../../services/api'
+import React, { useState } from 'react'
+import { Alert, Button, Card, Form } from 'react-bootstrap'
+import { api, mensagemDeErro } from '../../api/client'
+import { useAuth } from '../../AuthContext'
 import { Carregando } from '../../components/Carregando'
 import { Erro } from '../../components/Erro'
-import { Foto } from '../../components/Foto'
+import { useApi } from '../../hooks/useApi'
 
-export default function Negocio() {
-  const { dados, carregando, erro, recarregar } = useApi('/organizacao/')
-  const [nome, setNome] = useState('')
-  const [descricao, setDescricao] = useState('')
-  const [logo, setLogo] = useState(null)
-  const [preview, setPreview] = useState(null)
-  const [salvando, setSalvando] = useState(false)
-  const [sucesso, setSucesso] = useState(false)
-  const [erroForm, setErroForm] = useState('')
+export function Negocio() {
+  const { dados, erro, carregando, recarregar } = useApi('/organizacao/')
 
-  useEffect(() => {
-    if (dados) {
-      setNome(dados.nome || '')
-      setDescricao(dados.descricao || '')
-      setPreview(dados.logo || null)
-    }
-  }, [dados])
+  if (erro) return <Erro erro={erro} tentarDeNovo={recarregar} />
+  if (carregando) return <Carregando />
 
-  if (carregando) return <Carregando mensagem="Carregando dados da instituição..." />
-  if (erro) return <Erro mensagem="Erro ao carregar dados do negócio." onTentarDeNovo={recarregar} />
+  return <FormNegocio organizacao={dados} />
+}
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setLogo(file)
-      setPreview(URL.createObjectURL(file))
+function FormNegocio({ organizacao }) {
+  const { usuario, setUsuario } = useAuth()
+  const [nome, setNome] = useState(organizacao?.nome || '')
+  const [descricao, setDescricao] = useState(organizacao?.descricao || '')
+  const [logo, setLogo] = useState(organizacao?.logo || null)
+  const [arquivo, setArquivo] = useState(null)
+  const [erro, setErro] = useState(null)
+  const [erros, setErros] = useState({})
+  const [salvo, setSalvo] = useState(false)
+
+  async function salvar(corpo) {
+    setErro(null)
+    setErros({})
+    setSalvo(false)
+    try {
+      const nova = await api('/organizacao/', { method: 'PATCH', body: corpo })
+      setLogo(nova.logo)
+      setUsuario({ ...usuario, organizacao: nova })
+      setSalvo(true)
+    } catch (err) {
+      setErro(mensagemDeErro(err))
+      setErros(err.dados ?? {})
     }
   }
 
-  const handleSubmit = async (e) => {
+  function handleSubmit(e) {
     e.preventDefault()
-    setSalvando(true)
-    setErroForm('')
-    setSucesso(false)
-
-    const formData = new FormData()
-    formData.append('nome', nome)
-    formData.append('descricao', descricao)
-    if (logo) formData.append('logo', logo)
-
-    try {
-      await atualizarOrganizacao(formData)
-      setSucesso(true)
-      recarregar()
-    } catch (err) {
-      setErroForm(mensagemDeErro(err))
-    } finally {
-      setSalvando(false)
+    const formulario = new FormData()
+    formulario.append('nome', nome)
+    formulario.append('descricao', descricao)
+    if (arquivo) {
+      formulario.append('logo', arquivo)
     }
+    salvar(formulario)
   }
 
   return (
-    <Card className="shadow-sm border-0 max-w-2xl mx-auto">
+    <Card className="shadow-sm border-0">
       <Card.Body className="p-4">
-        <h3 className="mb-4">Dados da Instituição</h3>
+        <h2 className="fw-bold mb-4">Dados da Instituição / Laboratório</h2>
 
-        {sucesso && <div className="alert alert-success">Dados atualizados com sucesso!</div>}
-        {erroForm && <Erro mensagem={erroForm} />}
+        {erro && <Alert variant="danger">{erro}</Alert>}
+        {salvo && <Alert variant="success">Dados salvos com sucesso.</Alert>}
 
         <Form onSubmit={handleSubmit}>
-          <div className="text-center mb-4">
-            <Foto src={preview} alt={nome} tamanho={100} className="mb-3 shadow-sm" />
-            <div>
-              <Form.Group controlId="logoFile">
-                <Form.Label className="btn btn-outline-primary size-sm cursor-pointer">
-                  Alterar Logo
-                </Form.Label>
-                <Form.Control type="file" accept="image/*" onChange={handleLogoChange} className="d-none" />
-              </Form.Group>
-            </div>
-          </div>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Nome da Instituição/Departamento</Form.Label>
+          <Form.Group className="mb-3" controlId="nomeOrganizacao">
+            <Form.Label className="fw-medium">Nome</Form.Label>
             <Form.Control
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
+              isInvalid={!!erros.nome}
               required
             />
+            <Form.Control.Feedback type="invalid">
+              {erros.nome?.join(' ')}
+            </Form.Control.Feedback>
           </Form.Group>
 
-          <Form.Group className="mb-4">
-            <Form.Label>Descrição</Form.Label>
+          <Form.Group className="mb-3" controlId="descricaoOrganizacao">
+            <Form.Label className="fw-medium">Descrição</Form.Label>
             <Form.Control
               as="textarea"
-              rows={4}
+              rows={3}
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
+              isInvalid={!!erros.descricao}
             />
+            <Form.Control.Feedback type="invalid">
+              {erros.descricao?.join(' ')}
+            </Form.Control.Feedback>
           </Form.Group>
 
-          <Button type="submit" variant="primary" className="w-100 py-2" disabled={salvando}>
-            {salvando ? 'Salvando...' : 'Salvar Alterações'}
-          </Button>
+          <Form.Group className="mb-4" controlId="logoOrganizacao">
+            <Form.Label className="fw-medium">Logotipo</Form.Label>
+            {logo && (
+              <div className="mb-2">
+                <img
+                  src={logo}
+                  alt="Logo"
+                  style={{ maxWidth: '200px' }}
+                  className="rounded border p-1"
+                />
+              </div>
+            )}
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={(e) => setArquivo(e.target.files[0])}
+              isInvalid={!!erros.logo}
+            />
+            <Form.Control.Feedback type="invalid">
+              {erros.logo?.join(' ')}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <div className="d-flex gap-2">
+            <Button type="submit" variant="primary">
+              Salvar
+            </Button>
+            {logo && (
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => salvar({ logo: null })}
+              >
+                Remover logotipo
+              </Button>
+            )}
+          </div>
         </Form>
       </Card.Body>
     </Card>

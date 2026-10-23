@@ -1,138 +1,212 @@
 import React, { useState } from 'react'
-import { Card, Button, Form, Row, Col, Table } from 'react-bootstrap'
-import { useParams } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
-import { criarDisponibilidade, excluirDisponibilidade, mensagemDeErro } from '../../services/api'
+import { Alert, Button, Card, Form, ListGroup, Modal } from 'react-bootstrap'
+import { Link, useParams } from 'react-router-dom'
+import { api, buscarTodas, mensagemDeErro } from '../../api/client'
 import { Carregando } from '../../components/Carregando'
+import { Confirmacao } from '../../components/Confirmacao'
 import { Erro } from '../../components/Erro'
+import { useApi } from '../../hooks/useApi'
 
-const DIAS = [
-  { id: 0, nome: 'Segunda-feira' },
-  { id: 1, nome: 'Terça-feira' },
-  { id: 2, nome: 'Quarta-feira' },
-  { id: 3, nome: 'Quinta-feira' },
-  { id: 4, nome: 'Sexta-feira' },
-  { id: 5, nome: 'Sábado' },
-  { id: 6, nome: 'Domingo' },
-]
+const DIAS = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
-export default function Horarios() {
+export function Horarios() {
   const { id } = useParams()
-  const { dados: lab } = useApi(`/recursos/${id}/`)
-  const { dados: disponibilidades, carregando, erro, recarregar } = useApi(`/disponibilidades/?recurso=${id}`)
+  const recurso = useApi(`/recursos/${id}/`)
+  const horarios = useApi(`/disponibilidades/?recurso=${id}`, buscarTodas)
+  const [editando, setEditando] = useState(null)
+  const [removendo, setRemovendo] = useState(null)
+  const [erro, setErro] = useState(null)
 
-  const [dia, setDia] = useState(0)
-  const [inicio, setInicio] = useState('08:00')
-  const [fim, setFim] = useState('12:00')
-  const [salvando, setSalvando] = useState(false)
-  const [erroForm, setErroForm] = useState('')
+  if (recurso.erro) return <Erro erro={recurso.erro} tentarDeNovo={recurso.recarregar} />
+  if (horarios.erro) return <Erro erro={horarios.erro} tentarDeNovo={horarios.recarregar} />
+  if (recurso.carregando || horarios.carregando) return <Carregando />
 
-  if (carregando) return <Carregando mensagem="Carregando horários..." />
-  if (erro) return <Erro mensagem="Erro ao buscar disponibilidades." onTentarDeNovo={recarregar} />
-
-  const lista = disponibilidades?.results || disponibilidades || []
-
-  const handleAdicionar = async (e) => {
-    e.preventDefault()
-    setSalvando(true)
-    setErroForm('')
-
+  async function remover() {
+    setErro(null)
     try {
-      await criarDisponibilidade({
-        recurso: Number(id),
-        dia_semana: Number(dia),
-        inicio,
-        fim,
-      })
-      recarregar()
+      await api(`/disponibilidades/${removendo}/`, { method: 'DELETE' })
+      horarios.recarregar()
     } catch (err) {
-      setErroForm(mensagemDeErro(err))
-    } finally {
-      setSalvando(false)
+      setErro(mensagemDeErro(err))
     }
+    setRemovendo(null)
   }
 
-  const handleExcluir = async (dispId) => {
+  function salvo() {
+    setEditando(null)
+    horarios.recarregar()
+  }
+
+  return (
+    <>
+      <div className="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h2 className="fw-bold mb-0">Horários de Funcionamento</h2>
+          <span className="text-muted fs-6">{recurso.dados.nome}</span>
+        </div>
+        <Button as={Link} to={`/admin/laboratorios/${id}`} variant="outline-secondary">
+          Voltar
+        </Button>
+      </div>
+
+      {erro && <Alert variant="danger">{erro}</Alert>}
+      {horarios.dados.length === 0 && (
+        <Alert variant="warning">
+          Sem horários definidos: ninguém conseguirá realizar reservas neste laboratório.
+        </Alert>
+      )}
+
+      {DIAS.map((nome, dia) => (
+        <Card key={dia} className="mb-3 shadow-sm border-0">
+          <Card.Header className="bg-white d-flex align-items-center justify-content-between py-3">
+            <span className="fw-bold">{nome}</span>
+            <Button
+              size="sm"
+              variant="outline-primary"
+              onClick={() => setEditando({ dia_semana: dia, hora_inicio: '', hora_fim: '' })}
+            >
+              <i className="bi bi-plus-lg me-1"></i> Adicionar Horário
+            </Button>
+          </Card.Header>
+          <ListGroup variant="flush">
+            {horarios.dados
+              .filter((h) => h.dia_semana === dia)
+              .map((h) => (
+                <ListGroup.Item key={h.id} className="d-flex align-items-center justify-content-between p-3">
+                  <span className="fw-medium">
+                    {h.hora_inicio.slice(0, 5)} às {h.hora_fim.slice(0, 5)}
+                  </span>
+                  <div className="d-flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline-secondary"
+                      onClick={() => setEditando(h)}
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline-danger"
+                      onClick={() => setRemovendo(h.id)}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </Button>
+                  </div>
+                </ListGroup.Item>
+              ))}
+          </ListGroup>
+        </Card>
+      ))}
+
+      {editando && (
+        <FormHorario
+          recurso={id}
+          horario={editando}
+          onSalvo={salvo}
+          onFechar={() => setEditando(null)}
+        />
+      )}
+
+      <Confirmacao
+        show={removendo !== null}
+        titulo="Remover horário"
+        mensagem="Deseja mesmo remover esta faixa de horário de funcionamento?"
+        textoConfirmar="Remover"
+        variante="danger"
+        onConfirmar={remover}
+        onFechar={() => setRemovendo(null)}
+      />
+    </>
+  )
+}
+
+function FormHorario({ recurso, horario, onSalvo, onFechar }) {
+  const [dia, setDia] = useState(horario.dia_semana)
+  const [inicio, setInicio] = useState(horario.hora_inicio ? horario.hora_inicio.slice(0, 5) : '')
+  const [fim, setFim] = useState(horario.hora_fim ? horario.hora_fim.slice(0, 5) : '')
+  const [erro, setErro] = useState(null)
+  const [erros, setErros] = useState({})
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setErro(null)
+    setErros({})
+    const corpo = { recurso, dia_semana: dia, hora_inicio: inicio, hora_fim: fim }
     try {
-      await excluirDisponibilidade(dispId)
-      recarregar()
+      if (horario.id) {
+        await api(`/disponibilidades/${horario.id}/`, { method: 'PATCH', body: corpo })
+      } else {
+        await api('/disponibilidades/', { method: 'POST', body: corpo })
+      }
+      onSalvo()
     } catch (err) {
-      setErroForm(mensagemDeErro(err))
+      setErro(mensagemDeErro(err))
+      setErros(err.dados ?? {})
     }
   }
 
   return (
-    <div>
-      <h2 className="mb-1">Horários do Laboratório</h2>
-      <p className="text-muted mb-4">{lab?.nome || 'Laboratório'}</p>
+    <Modal show onHide={onFechar} centered>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Header closeButton>
+          <Modal.Title className="fw-bold fs-5">
+            {horario.id ? 'Editar Horário' : 'Novo Horário'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="d-flex flex-column gap-3">
+          {erro && <Alert variant="danger">{erro}</Alert>}
 
-      {erroForm && <Erro mensagem={erroForm} />}
+          <Form.Group controlId="diaSemana">
+            <Form.Label className="fw-medium">Dia da semana</Form.Label>
+            <Form.Select
+              value={String(dia)}
+              onChange={(e) => setDia(Number(e.target.value))}
+            >
+              {DIAS.map((nome, i) => (
+                <option key={i} value={i}>
+                  {nome}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
 
-      <Card className="shadow-sm border-0 mb-4">
-        <Card.Body>
-          <h5 className="card-title mb-3">Adicionar Faixa de Horário</h5>
-          <Form onSubmit={handleAdicionar}>
-            <Row className="g-3 align-items-end">
-              <Col md={4}>
-                <Form.Label>Dia da Semana</Form.Label>
-                <Form.Select value={dia} onChange={(e) => setDia(e.target.value)}>
-                  {DIAS.map((d) => (
-                    <option key={d.id} value={d.id}>{d.nome}</option>
-                  ))}
-                </Form.Select>
-              </Col>
-              <Col md={3}>
-                <Form.Label>Horário Início</Form.Label>
-                <Form.Control type="time" value={inicio} onChange={(e) => setInicio(e.target.value)} required />
-              </Col>
-              <Col md={3}>
-                <Form.Label>Horário Fim</Form.Label>
-                <Form.Control type="time" value={fim} onChange={(e) => setFim(e.target.value)} required />
-              </Col>
-              <Col md={2}>
-                <Button type="submit" variant="primary" className="w-100" disabled={salvando}>
-                  Adicionar
-                </Button>
-              </Col>
-            </Row>
-          </Form>
-        </Card.Body>
-      </Card>
+          <Form.Group controlId="horaInicio">
+            <Form.Label className="fw-medium">Início</Form.Label>
+            <Form.Control
+              type="time"
+              value={inicio}
+              onChange={(e) => setInicio(e.target.value)}
+              isInvalid={!!erros.hora_inicio}
+              required
+            />
+            <Form.Control.Feedback type="invalid">
+              {erros.hora_inicio?.join(' ')}
+            </Form.Control.Feedback>
+          </Form.Group>
 
-      <Card className="shadow-sm border-0">
-        <Card.Body>
-          {lista.length === 0 ? (
-            <p className="text-muted text-center my-3">
-              Sem horários: ninguém consegue agendar neste laboratório.
-            </p>
-          ) : (
-            <Table responsive hover>
-              <thead>
-                <tr>
-                  <th>Dia da Semana</th>
-                  <th>Início</th>
-                  <th>Fim</th>
-                  <th className="text-end">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lista.map((item) => (
-                  <tr key={item.id}>
-                    <td>{DIAS.find((d) => d.id === item.dia_semana)?.nome || item.dia_semana}</td>
-                    <td>{item.inicio}</td>
-                    <td>{item.fim}</td>
-                    <td className="text-end">
-                      <Button variant="outline-danger" size="sm" onClick={() => handleExcluir(item.id)}>
-                        Remover
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          )}
-        </Card.Body>
-      </Card>
-    </div>
+          <Form.Group controlId="horaFim">
+            <Form.Label className="fw-medium">Fim</Form.Label>
+            <Form.Control
+              type="time"
+              value={fim}
+              onChange={(e) => setFim(e.target.value)}
+              isInvalid={!!erros.hora_fim}
+              required
+            />
+            <Form.Control.Feedback type="invalid">
+              {erros.hora_fim?.join(' ')}
+            </Form.Control.Feedback>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={onFechar}>
+            Voltar
+          </Button>
+          <Button type="submit" variant="primary">
+            Salvar
+          </Button>
+        </Modal.Footer>
+      </Form>
+    </Modal>
   )
 }

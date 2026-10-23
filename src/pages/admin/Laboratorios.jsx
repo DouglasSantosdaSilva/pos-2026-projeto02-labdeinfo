@@ -1,69 +1,65 @@
 import React, { useState } from 'react'
-import { Card, Button, Row, Col, Badge } from 'react-bootstrap'
-import { useNavigate } from 'react-router-dom'
-import { useApi } from '../../hooks/useApi'
-import { FiltroAtivo } from '../../components/FiltroAtivo'
+import { Alert, Badge, Button, Card, ListGroup } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import { Carregando } from '../../components/Carregando'
+import { CarregarMais } from '../../components/CarregarMais'
 import { Erro } from '../../components/Erro'
+import { FiltroAtivo } from '../../components/FiltroAtivo'
 import { Foto } from '../../components/Foto'
+import { usePaginado } from '../../hooks/useApi'
 
-export default function LaboratoriosAdmin() {
-  const navigate = useNavigate()
-  const [filtro, setFiltro] = useState('true')
-
-  const { dados, carregando, erro, recarregar } = useApi(`/recursos/${filtro ? `?ativo=${filtro}` : ''}`)
-
-  if (carregando) return <Carregando mensagem="Carregando laboratórios..." />
-  if (erro) return <Erro mensagem="Erro ao carregar laboratórios." onTentarDeNovo={recarregar} />
-
-  const laboratorios = dados?.results || dados || []
+export function Recursos() {
+  const [ativo, setAtivo] = useState('')
+  const recursos = usePaginado(ativo ? `/recursos/?ativo=${ativo}` : '/recursos/')
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestão de Laboratórios</h2>
-        <Button variant="primary" onClick={() => navigate('/admin/laboratorios/novo')}>
-          + Novo Laboratório
+    <>
+      <div className="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <h2 className="fw-bold mb-0 me-auto">Laboratórios</h2>
+        <FiltroAtivo valor={ativo} onChange={setAtivo} />
+        <Button as={Link} to="/admin/laboratorios/novo" variant="primary">
+          <i className="bi bi-plus-lg me-1"></i> Novo Laboratório
         </Button>
       </div>
 
-      <FiltroAtivo valor={filtro} onChange={setFiltro} />
+      {recursos.erro && <Erro erro={recursos.erro} tentarDeNovo={recursos.recarregar} />}
 
-      {laboratorios.length === 0 ? (
-        <p className="text-muted">Cadastre o primeiro laboratório.</p>
-      ) : (
-        <Row className="g-4 mt-1">
-          {laboratorios.map((lab) => (
-            <Col md={6} lg={4} key={lab.id}>
-              <Card className="shadow-sm border-0 h-100">
-                <Card.Body className="d-flex flex-column">
-                  <div className="d-flex align-items-center gap-3 mb-3">
-                    <Foto src={lab.foto} alt={lab.nome} tamanho={60} arredondado={false} />
-                    <div>
-                      <h5 className="mb-1">{lab.nome}</h5>
-                      <Badge bg={lab.ativo ? 'success' : 'secondary'}>
-                        {lab.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <p className="text-muted small mb-2">{lab.bio || 'Sem descrição.'}</p>
-                  <p className="fw-semibold text-primary mb-3">
-                    💻 Capacidade: {lab.capacidade} computadores
-                  </p>
-                  <div className="mt-auto d-flex gap-2">
-                    <Button variant="outline-primary" size="sm" className="w-100" onClick={() => navigate(`/admin/laboratorios/${lab.id}`)}>
-                      Editar
-                    </Button>
-                    <Button variant="outline-secondary" size="sm" className="w-100" onClick={() => navigate(`/admin/laboratorios/${lab.id}/horarios`)}>
-                      Horários
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+      {!recursos.carregando && !recursos.erro && recursos.itens.length === 0 && (
+        <Alert variant="info">Cadastre o primeiro laboratório.</Alert>
       )}
-    </div>
+
+      {recursos.itens.length > 0 && (
+        <Card className="shadow-sm border-0 mb-3">
+          <ListGroup variant="flush">
+            {recursos.itens.map((recurso) => (
+              <ListGroup.Item
+                key={recurso.id}
+                action
+                as={Link}
+                to={`/admin/laboratorios/${recurso.id}`}
+                className="d-flex align-items-center gap-3 p-3 text-decoration-none"
+              >
+                <Foto src={recurso.foto} tamanho={48} />
+                <div className="me-auto">
+                  <div className="fw-semibold text-dark">{recurso.nome}</div>
+                  <small className="text-muted">Capacidade: {recurso.capacidade}</small>
+                </div>
+                {recurso.ativo ? (
+                  <Badge bg="success" className="px-2 py-1">
+                    Ativo
+                  </Badge>
+                ) : (
+                  <Badge bg="secondary" className="px-2 py-1">
+                    Inativo
+                  </Badge>
+                )}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card>
+      )}
+
+      {recursos.carregando ? <Carregando /> : <CarregarMais lista={recursos} />}
+    </>
   )
 }
