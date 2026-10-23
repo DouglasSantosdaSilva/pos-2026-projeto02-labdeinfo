@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { api, login } from './services/api' // Ajuste o caminho se o seu for ./api/client
+import { api, login } from './api/client'
 import { AuthContext } from './AuthContext'
 
 export function AuthProvider({ children }) {
@@ -9,15 +9,11 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (localStorage.getItem('access')) {
       api('/auth/eu/')
-        .then((dados) => setUsuario(dados))
+        .then(setUsuario)
         .catch(() => {
-          // Fallback Simulado: Mantém o usuário ativo mesmo se o backend estiver offline
-          setUsuario({
-            id: 1,
-            nome: 'Aluno Lab',
-            email: 'aluno@universidade.edu.br',
-            permissoes: ['api.reserva_lab']
-          })
+          localStorage.removeItem('access')
+          localStorage.removeItem('refresh')
+          setUsuario(null)
         })
         .finally(() => setCarregando(false))
     } else {
@@ -26,34 +22,12 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function entrar(email, senha) {
-    try {
-      const resposta = await login({ email, senha, organizacao: 'laboratorio-de-informatica' })
-      localStorage.setItem('access', resposta.access)
-      if (resposta.refresh) {
-        localStorage.setItem('refresh', resposta.refresh)
-      }
-
-      try {
-        const dadosUsuario = await api('/auth/eu/')
-        setUsuario(dadosUsuario)
-      } catch {
-        setUsuario({
-          id: 1,
-          nome: email ? email.split('@')[0] : 'Usuário Lab',
-          email: email || 'aluno@universidade.edu.br',
-          permissoes: []
-        })
-      }
-    } catch (err) {
-      // Simulação em caso de backend offline
-      localStorage.setItem('access', 'token-simulado-ativo')
-      setUsuario({
-        id: 1,
-        nome: email ? email.split('@')[0] : 'Usuário Lab',
-        email: email || 'aluno@universidade.edu.br',
-        permissoes: []
-      })
-    }
+    const { access, refresh } = await login(email, senha)
+    localStorage.setItem('access', access)
+    localStorage.setItem('refresh', refresh)
+    const dadosUsuario = await api('/auth/eu/')
+    setUsuario(dadosUsuario)
+    return dadosUsuario
   }
 
   function sair() {
@@ -63,7 +37,7 @@ export function AuthProvider({ children }) {
   }
 
   function pode(permissao) {
-    return usuario !== null && Array.isArray(usuario.permissoes) && usuario.permissoes.includes(permissao)
+    return Array.isArray(usuario?.permissoes) && usuario.permissoes.includes(permissao)
   }
 
   const inicio = pode('api.change_organizacao') ? '/admin/agenda' : '/inicio'

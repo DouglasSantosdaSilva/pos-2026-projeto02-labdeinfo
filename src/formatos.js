@@ -1,21 +1,43 @@
-// Formata datas para o padrão brasileiro (DD/MM/AAAA)
-export function formatarData(dataIso) {
-  if (!dataIso) return ''
-  const data = new Date(dataIso)
-  return data.toLocaleDateString('pt-BR')
+export function formatarData(iso) {
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 
-// Formata horas (HH:MM)
-export function formatarHora(hora) {
-  if (!hora) return ''
-  return hora.slice(0, 5)
+export function formatarHora(iso) {
+  return new Date(iso).toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
-// Formata moeda para Reais (R$)
-export function formatarMoeda(valor) {
-  if (valor === undefined || valor === null) return 'R$ 0,00'
-  return Number(valor).toLocaleString('pt-BR', {
+export function formatarPreco(preco) {
+  return Number(preco).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   })
 }
+
+// Data no formato AAAA-MM-DD usado pela API e pelo <input type="date">
+export function dataISO(data) {
+  const ano = data.getFullYear()
+  const mes = String(data.getMonth() + 1).padStart(2, '0')
+  const dia = String(data.getDate()).padStart(2, '0')
+  return `${ano}-${mes}-${dia}`
+}
+
+export function hoje() {
+  return dataISO(new Date())
+}
+
+export function somarDias(data, dias) {
+  const nova = new Date(`${data}T00:00`)
+  nova.setDate(nova.getDate() + dias)
+  return dataISO(nova)
+}
+
+// Alias de compatibilidade
+export const formatarMoeda = formatarPreco
